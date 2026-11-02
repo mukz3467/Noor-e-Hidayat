@@ -38,6 +38,9 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalInspectionMode
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +60,53 @@ data class Surah(val number:Int,val name:String,val english:String,val meaning:S
 data class Ayah(val number:Int,val arabic:String,val english:String,val urdu:String)
 
 class MainActivity:ComponentActivity(){
- override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);window.statusBarColor=android.graphics.Color.rgb(6,31,23);window.navigationBarColor=android.graphics.Color.rgb(6,31,23);MobileAds.initialize(this){};setContent{NoorApp()}}
+ private lateinit var consentInformation:ConsentInformation
+ private var adsAllowed by mutableStateOf(false)
+ private var privacyOptionsRequired by mutableStateOf(false)
+
+ override fun onCreate(savedInstanceState:Bundle?){
+  super.onCreate(savedInstanceState)
+  window.statusBarColor=android.graphics.Color.rgb(6,31,23)
+  window.navigationBarColor=android.graphics.Color.rgb(6,31,23)
+  consentInformation=UserMessagingPlatform.getConsentInformation(this)
+  setContent{
+   NoorApp(
+    adsAllowed=adsAllowed,
+    privacyOptionsRequired=privacyOptionsRequired,
+    onPrivacyOptions={UserMessagingPlatform.showPrivacyOptionsForm(this){ formError -> 
+     privacyOptionsRequired=consentInformation.privacyOptionsRequirementStatus==ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+    }}
+   )
+  }
+  gatherConsent()
+ }
+
+ private fun gatherConsent(){
+  val params=ConsentRequestParameters.Builder().build()
+  consentInformation.requestConsentInfoUpdate(
+   this,
+   params,
+   {
+    privacyOptionsRequired=consentInformation.privacyOptionsRequirementStatus==ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+    UserMessagingPlatform.loadAndShowConsentFormIfRequired(this){ formError ->
+     privacyOptionsRequired=consentInformation.privacyOptionsRequirementStatus==ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+     enableAdsIfAllowed()
+    }
+    enableAdsIfAllowed()
+   },
+   { requestError ->
+    privacyOptionsRequired=consentInformation.privacyOptionsRequirementStatus==ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+    enableAdsIfAllowed()
+   }
+  )
+ }
+
+ private fun enableAdsIfAllowed(){
+  if(consentInformation.canRequestAds()&&!adsAllowed){
+   adsAllowed=true
+   MobileAds.initialize(this){}
+  }
+ }
 }
 
 private fun prefsHistory(ctx:android.content.Context):List<String> = (ctx.getSharedPreferences("noor_prefs",0).getString("history","")?:"").split("|").filter{it.isNotBlank()}
@@ -76,7 +125,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  return (0 until ar.length()).map{i->Ayah(ar.getJSONObject(i).getInt("numberInSurah"),ar.getJSONObject(i).getString("text"),en.getJSONObject(i).getString("text"),ur.getJSONObject(i).getString("text"))}
 }
 
-@Composable private fun NoorApp(){
+@Composable private fun NoorApp(adsAllowed:Boolean,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
  val ctx= LocalContext.current
  val prefs=remember{ctx.getSharedPreferences("noor_prefs",0)}
  var page by remember{mutableStateOf("Home")}
@@ -118,7 +167,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
     }
    }
-    AdMobBanner()
+    if(adsAllowed)AdMobBanner()
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
@@ -136,7 +185,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizIndex<quizData.size&&quizAnswer==-1){if(a==quizData[quizIndex].third)quizScore++;quizAnswer=a}},{if(quizIndex>=quizData.size){quizIndex=0;quizScore=0}else{quizIndex++};quizAnswer=-1})
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
-     "Settings"->SettingsScreen(lang){lang=it;prefs.edit().putString("lang",it).apply()}
+     "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},privacyOptionsRequired,onPrivacyOptions)
      "VideoLibrary"->VideoLibraryScreen(videoCategory){playlistId->if(playlistId.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+playlistId+"&playsinline=1")}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
      else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
@@ -305,7 +354,7 @@ private data class Q(val prompt:String,val options:List<String>,val third:Int)
 private val quizData=listOf(Q("How many daily obligatory prayers are there?",listOf("Three","Five","Seven"),1),Q("Which month do Muslims fast?",listOf("Ramadan","Shawwal","Muharram"),0),Q("Which direction do Muslims face in salah?",listOf("Jerusalem","The Kaaba","Madinah"),1),Q("What is the first month of the Islamic calendar?",listOf("Ramadan","Muharram","Rajab"),1),Q("What is the holy book of Islam?",listOf("Quran","Torah","Psalms"),0))
 @Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].third)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].third],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
 @Composable private fun HistoryScreen(history:List<String>){Base{Heading("YOUR ACTIVITY","Watch history");if(history.isEmpty())Text("No recently played items in this session.",color=Muted);history.forEach{Text(it,color=Cream,modifier=Modifier.fillMaxWidth().padding(12.dp).background(Panel,RoundedCornerShape(10.dp)).padding(10.dp))}}}
-@Composable private fun SettingsScreen(lang:String,change:(String)->Unit){Base{Heading("PREFERENCES","Settings");Text("App language",color=Gold);listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Text("Language choice is saved; full interface translations are not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp))}}
+@Composable private fun SettingsScreen(lang:String,change:(String)->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){Base{Heading("PREFERENCES","Settings");Text("App language",color=Gold);listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Text("Language choice is saved; full interface translations are not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp));if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Privacy options")}}}}
 @SuppressLint("SetJavaScriptEnabled")
 @Composable private fun MediaScreen(title:String,url:String,videoId:String){
  val ctx=LocalContext.current
