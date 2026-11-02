@@ -316,7 +316,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
      Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
      Text("Browse this category",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
      Text("No verified playlist is configured yet. Browse YouTube results inside Noor-e-Hidayat and choose a video. Results are provided by YouTube and are not individually curated by this app.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
-     Button(onClick={open("https://www.youtube.com/results?search_query="+android.net.Uri.encode("Islamic "+category)))},modifier=Modifier.fillMaxWidth().padding(top=12.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text("Browse on YouTube")}
+     Button(onClick={open("https://www.youtube.com/results?search_query="+android.net.Uri.encode("Islamic "+category))},modifier=Modifier.fillMaxWidth().padding(top=12.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text("Browse on YouTube")}
     }
    }
   }else{
