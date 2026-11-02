@@ -158,7 +158,41 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
  }
 }
 @Composable private fun RecitationsScreen(data:List<Surah>,play:(Surah)->Unit,search:(String)->Unit){Base{Heading("LISTEN & REFLECT","Beautiful recitations");Text("Listen to the full surah recitation by Mishary Rashid Alafasy.",color=Muted,fontSize=13.sp);LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=12.dp,bottom=20.dp)){items(data){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).clickable{play(s)}.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.PlayCircle,null,tint=Gold);Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=18.sp)}}}}}
-@Composable private fun CategoryScreen(title:String,categories:List<String>,open:(String)->Unit){Base{Heading("KNOWLEDGE & GUIDANCE",title);categories.forEach{Tile(it,"Browse videos in YouTube's official player","▶"){open(it)};Spacer(Modifier.height(9.dp))}}}
+@Composable private fun CategoryScreen(title:String,categories:List<String>,open:(String)->Unit){
+ val isLecture=title.contains("lecture",true)
+ val eyebrow=if(isLecture)"LEARN FROM THE UMMAH" else "EXPLORE & LISTEN"
+ val intro=if(isLecture)"Explore lessons by subject. Playback stays inside Noor-e-Hidayat." else "Choose a recitation collection and continue your listening journey."
+ Base{
+  Column(Modifier.fillMaxWidth().padding(top=10.dp,bottom=14.dp)){
+   Text(eyebrow,color=Gold,fontSize=10.sp,letterSpacing=2.sp,fontWeight=FontWeight.Bold)
+   Text(title,color=Cream,fontSize=29.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=6.dp))
+   Text(intro,color=Muted,fontSize=13.sp,lineHeight=20.sp,modifier=Modifier.padding(top=8.dp))
+  }
+  Card(Modifier.fillMaxWidth().padding(bottom=16.dp),shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Gold.copy(alpha=.35f))){
+   Row(Modifier.fillMaxWidth().padding(18.dp),verticalAlignment=Alignment.CenterVertically){
+    Box(Modifier.size(52.dp).background(Emerald,RoundedCornerShape(16.dp)),contentAlignment=Alignment.Center){Text(if(isLecture)"◉" else "♫",color=Gold,fontSize=27.sp)}
+    Column(Modifier.weight(1f).padding(start=14.dp)){
+     Text(if(isLecture)"Explore by subject" else "Listen with focus",color=Gold,fontSize=11.sp,fontWeight=FontWeight.Bold)
+     Text(if(isLecture)"Choose a subject to find relevant talks" else "Select a recitation to open the player",color=Cream,fontSize=13.sp,modifier=Modifier.padding(top=4.dp))
+    }
+   }
+  }
+  LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp),contentPadding=PaddingValues(bottom=24.dp)){
+   items(categories){category->
+    Card(onClick={open(category)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(17.dp),colors=CardDefaults.cardColors(containerColor=Deep),border=BorderStroke(1.dp,Border)){
+     Row(Modifier.fillMaxWidth().padding(horizontal=15.dp,vertical=16.dp),verticalAlignment=Alignment.CenterVertically){
+      Box(Modifier.size(42.dp).background(Panel,RoundedCornerShape(13.dp)),contentAlignment=Alignment.Center){Text(if(isLecture)"▶" else "♫",color=Gold,fontSize=18.sp)}
+      Column(Modifier.weight(1f).padding(start=13.dp)){
+       Text(category,color=Cream,fontSize=15.sp,fontWeight=FontWeight.SemiBold)
+       Text(if(isLecture)"Browse talks on this subject" else "Open recitation collection",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=4.dp))
+      }
+      Icon(Icons.Default.ChevronRight,null,tint=Gold)
+     }
+    }
+   }
+  }
+ }
+}
 @Composable private fun LiveScreen(open:(String,String)->Unit){Base{Heading("LIVE BROADCASTS","Makkah & Madinah");Text("Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.",color=Muted,fontSize=13.sp);Spacer(Modifier.height(18.dp));Tile("Masjid al-Haram · Makkah","Official Saudi broadcaster","🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")};Spacer(Modifier.height(12.dp));Tile("Al-Masjid an-Nabawi · Madinah","Official Saudi broadcaster","☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}}}
 @Composable private fun MoreScreen(go:(String)->Unit){Base{Heading("YOUR SPACE","More features");listOf("Favourites","History","Learning","Quiz","Settings").forEach{Tile(it,"Open "+it,"✧"){go(it)};Spacer(Modifier.height(9.dp))}}}
 @Composable private fun LearningScreen(open:(String)->Unit){Base{Heading("BUILD YOUR SKILLS","Quran learning");listOf("Arabic alphabet" to "Start with letters and correct sounds.","Makharij" to "Learn articulation points with a qualified teacher.","Basic Tajweed" to "Study Noon Sakinah, Tanween, Meem Sakinah, Madd and Qalqalah.","Daily revision" to "Read consistently and focus on correct pronunciation.").forEach{(t,d)->Card(Modifier.fillMaxWidth().padding(bottom=9.dp),colors=CardDefaults.cardColors(containerColor=Panel)){Column(Modifier.padding(14.dp)){Text(t,color=Gold,fontWeight=FontWeight.Bold);Text(d,color=Cream,fontSize=13.sp,modifier=Modifier.padding(top=6.dp))}}};Button({open("Learn Quran Arabic alphabet Tajweed beginner")},Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Find beginner lessons")}}}
@@ -170,14 +204,58 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
 @Composable private fun SettingsScreen(lang:String,change:(String)->Unit){Base{Heading("PREFERENCES","Settings");Text("App language",color=Gold);listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Text("Language choice is saved; full interface translations are not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp))}}
 @SuppressLint("SetJavaScriptEnabled")
 @Composable private fun MediaScreen(title:String,url:String,videoId:String){
- val ctx=LocalContext.current;val audio=url.endsWith(".mp3")
- val player= remember(url){if(audio&&url.isNotBlank())ExoPlayer.Builder(ctx).build().apply{setMediaItem(MediaItem.fromUri(url));prepare()}else null}
+ val ctx=LocalContext.current
+ val audio=url.endsWith(".mp3",ignoreCase=true)
+ val player= remember(url){
+  if(audio&&url.isNotBlank()) ExoPlayer.Builder(ctx).build().apply{setMediaItem(MediaItem.fromUri(url));prepare()} else null
+ }
  DisposableEffect(player){onDispose{player?.release()}}
- Base{Heading("NOW PLAYING",title)
- if(url.contains("youtube.com")||url.contains("mcs.org.sa")||videoId.isNotBlank()){
-  AndroidView(factory={c->WebView(c).apply{settings.javaScriptEnabled=true;settings.domStorageEnabled=true;settings.mediaPlaybackRequiresUserGesture=true;webChromeClient=WebChromeClient();webViewClient=WebViewClient();loadUrl(if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url)}},modifier=Modifier.fillMaxWidth().weight(1f))
-  Text("YouTube and broadcaster controls, ads, geographic availability and playback restrictions remain with the original provider.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(vertical=10.dp))
- }else if(player!=null){AndroidView(factory={c->PlayerView(c).apply{this.player=player;useController=true}},modifier=Modifier.fillMaxWidth().height(220.dp));Text("Quran audio streamed from AlQuran Cloud CDN.",color=Muted,fontSize=11.sp)}else Text("Media unavailable.",color=Muted)
+ Base{
+  Column(Modifier.fillMaxWidth().padding(top=10.dp,bottom=14.dp)){
+   Text("NOOR PLAYER",color=Gold,fontSize=10.sp,letterSpacing=2.sp,fontWeight=FontWeight.Bold)
+   Text(title,color=Cream,fontSize=27.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=6.dp))
+   Text(if(audio)"Audio playback · Media3" else "In-app video · Provider player",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=5.dp))
+  }
+  if(url.contains("youtube.com",true)||url.contains("youtu.be",true)||url.contains("mcs.org.sa",true)||videoId.isNotBlank()){
+   Card(Modifier.fillMaxWidth().weight(1f),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.Black),border=BorderStroke(1.dp,Border)){
+    AndroidView(
+     factory={c->
+      WebView(c).apply{
+       setBackgroundColor(android.graphics.Color.BLACK)
+       settings.javaScriptEnabled=true
+       settings.domStorageEnabled=true
+       settings.mediaPlaybackRequiresUserGesture=true
+       settings.loadsImagesAutomatically=true
+       settings.setSupportMultipleWindows(false)
+       webChromeClient=WebChromeClient()
+       webViewClient=object:WebViewClient(){
+        override fun shouldOverrideUrlLoading(view:WebView?,request:android.webkit.WebResourceRequest):Boolean{
+         val scheme=request.url.scheme?.lowercase()
+         // Keep HTTP(S) navigation inside this WebView; block app/deep-link schemes.
+         return scheme!="http" && scheme!="https"
+        }
+        @Suppress("DEPRECATION")
+        override fun shouldOverrideUrlLoading(view:WebView?,url:String):Boolean{
+         val scheme=android.net.Uri.parse(url).scheme?.lowercase()
+         return scheme!="http" && scheme!="https"
+        }
+       }
+       val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
+       loadUrl(target)
+      }
+     },
+     update={webView->
+      val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
+      if(webView.url!=target)webView.loadUrl(target)
+     },
+     modifier=Modifier.fillMaxSize()
+    )
+   }
+   Text("Web links stay inside the app. YouTube playback, ads, sign-in and regional restrictions remain controlled by YouTube.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(top=10.dp))
+  }else if(player!=null){
+   AndroidView(factory={c->PlayerView(c).apply{this.player=player;useController=true}},modifier=Modifier.fillMaxWidth().height(245.dp))
+   Text("Quran audio streamed from AlQuran Cloud using Media3 ExoPlayer.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
+  }else{Text("This media link is not supported.",color=Muted)}
  }
 }
 @Composable private fun fieldColors()=OutlinedTextFieldDefaults.colors(focusedTextColor=Cream,unfocusedTextColor=Cream,focusedBorderColor=Gold,unfocusedBorderColor=Border,cursorColor=Gold)
