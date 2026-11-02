@@ -2,11 +2,8 @@ package com.noorehidayat.app
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -23,21 +20,16 @@ class MainActivity : Activity() {
         window.statusBarColor = android.graphics.Color.rgb(4, 27, 19)
         window.navigationBarColor = android.graphics.Color.rgb(4, 27, 19)
         webView = WebView(this)
-        webView.settings.javaScriptEnabled = true
-        webView.settings.domStorageEnabled = true
-        webView.settings.mediaPlaybackRequiresUserGesture = true
-        webView.settings.javaScriptCanOpenWindowsAutomatically = true
-        webView.addJavascriptInterface(AndroidBridge(), "AndroidBridge")
-        webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                if (url == null) return false
-                if (url.startsWith("https://www.youtube.com/") || url.startsWith("https://m.youtube.com/")) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    return true
-                }
-                return false
-            }
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            mediaPlaybackRequiresUserGesture = true
+            javaScriptCanOpenWindowsAutomatically = false
+            allowFileAccess = true
+            allowContentAccess = true
+            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
+        webView.webViewClient = WebViewClient()
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
                 if (view == null) return
@@ -50,6 +42,7 @@ class MainActivity : Activity() {
                     or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
             }
+
             override fun onHideCustomView() {
                 customView?.let { (it.parent as? android.view.ViewGroup)?.removeView(it) }
                 customView = null
@@ -64,16 +57,6 @@ class MainActivity : Activity() {
         else webView.restoreState(savedInstanceState)
     }
 
-    inner class AndroidBridge {
-        @JavascriptInterface
-        fun openExternal(url: String) {
-            runOnUiThread {
-                try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-                catch (_: Exception) { }
-            }
-        }
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         webView.saveState(outState)
         super.onSaveInstanceState(outState)
@@ -82,14 +65,16 @@ class MainActivity : Activity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (customView != null) {
-            webView.webChromeClient?.onHideCustomView()
+            webView.evaluateJavascript("document.exitFullscreen && document.exitFullscreen()", null)
             return
         }
         webView.evaluateJavascript(
-            "(function(){var p=document.querySelector('.page.active');if(!p)return 'home';return p.id;})()"
+            "(function(){var p=document.querySelector('.page.active');return p?p.id:'home'})()"
         ) { page ->
             if (page != null && page != "\"home\"" && page != "null") {
                 webView.evaluateJavascript("if(typeof goBack==='function'){goBack()}else{show('home')}", null)
+            } else if (webView.canGoBack()) {
+                webView.goBack()
             } else {
                 super@MainActivity.onBackPressed()
             }
