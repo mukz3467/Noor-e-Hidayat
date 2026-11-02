@@ -15,15 +15,17 @@ class NoorSmokeTest {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun learningGuideOpensFromHome() {
-        composeRule.onNodeWithText("Quran Learning").performClick()
+    fun learningGuideOpensFromMoreTab() {
+        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNodeWithText("Learning").performClick()
         composeRule.onNodeWithText("Quran learning").assertIsDisplayed()
         composeRule.onNodeWithText("1. Arabic alphabet").assertIsDisplayed()
     }
 
     @Test
     fun quizOpensAndShowsFirstQuestion() {
-        composeRule.onNodeWithText("Islamic Quiz").performClick()
+        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNodeWithText("Quiz").performClick()
         composeRule.onNodeWithText("How many daily obligatory prayers are there?")
             .assertIsDisplayed()
     }
