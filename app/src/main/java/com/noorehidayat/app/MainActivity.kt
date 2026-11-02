@@ -83,6 +83,8 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var selected by remember{mutableStateOf<Surah?>(null)}
  var loading by remember{mutableStateOf(false)}
  var error by remember{mutableStateOf("")}
+ var surahReloadKey by remember{mutableIntStateOf(0)}
+ var ayahReloadKey by remember{mutableIntStateOf(0)}
  var search by remember{mutableStateOf("")}
  var mediaTitle by remember{mutableStateOf("")}
  var mediaUrl by remember{mutableStateOf("")}
@@ -98,12 +100,10 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  LaunchedEffect(Unit){
   favs=prefs.getStringSet("favs",emptySet())?.mapNotNull{it.toIntOrNull()}?.toSet()?:emptySet()
   lang=prefs.getString("lang","English")?:"English"
-  loading=true
-  try{surahs=getSurahs()}catch(e:Exception){error="Quran catalogue unavailable. Check your internet connection."}
-  loading=false
  }
+ LaunchedEffect(surahReloadKey){loading=true;error="";try{surahs=getSurahs()}catch(e:Exception){error="Quran catalogue unavailable. Check your internet connection and tap Retry."};loading=false}
  fun openSurah(s:Surah){selected=s;page="Reader";loading=true;error=""}
- LaunchedEffect(selected,page){val s=selected;if(page=="Reader"&&s!=null){try{ayahs=getAyahs(s.number);error=""}catch(e:Exception){error="Could not load this surah. Tap retry."};loading=false}}
+ LaunchedEffect(selected,page,ayahReloadKey){val s=selected;if(page=="Reader"&&s!=null){loading=true;error="";try{ayahs=getAyahs(s.number)}catch(e:Exception){error="Could not load this surah. Check your connection and tap Retry."};loading=false}}
  fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
  BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
@@ -121,8 +121,8 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
     if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
-     "Quran"->QuranScreen(surahs,loading,error,search,{search=it},{openSurah(it)},{loading=true})
-     "Reader"->ReaderScreen(selected,ayahs,loading,error,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{selected?.let{openSurah(it)}})
+     "Quran"->QuranScreen(surahs,loading,error,search,{search=it},{openSurah(it)},{loading=true;error="";surahReloadKey++})
+     "Reader"->ReaderScreen(selected,ayahs,loading,error,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
      "Recitations"->RecitationsScreen(surahs,{openSurah(it)},{})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
