@@ -54,6 +54,17 @@ class NoorSmokeTest {
     }
 
     @Test
+    fun mediaBackReturnsToTheScreenThatOpenedIt() {
+        composeRule.onNodeWithText("Discover").performClick()
+        composeRule.onNodeWithText("Islamic Dramas").performClick()
+        composeRule.onNodeWithText("Browse on YouTube").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Browse this category").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Islamic content").assertIsDisplayed()
+    }
+
+    @Test
     fun discoverShowsHonestEmptyStateInsteadOfDeadEnd() {
         composeRule.onNodeWithText("Discover").performClick()
         composeRule.onNodeWithText("Islamic Dramas").performClick()
