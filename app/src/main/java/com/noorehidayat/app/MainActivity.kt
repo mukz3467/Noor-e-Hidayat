@@ -114,7 +114,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Media"))Column { NavigationBar(containerColor=Deep){
     listOf("Home","Quran","Discover","More").forEach{p->
-     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings")}
+     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live")||(page=="VideoLibrary"&&videoParentPage=="Discover");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings")}
      NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
     }
    }
