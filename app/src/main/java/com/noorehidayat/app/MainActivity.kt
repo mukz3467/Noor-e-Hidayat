@@ -310,6 +310,9 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
 @Composable private fun MediaScreen(title:String,url:String,videoId:String){
  val ctx=LocalContext.current
  val audio=url.endsWith(".mp3",ignoreCase=true)
+ var webLoading by remember(url){mutableStateOf(true)}
+ var webError by remember(url){mutableStateOf("")}
+ val webViewRef=remember(url){mutableStateOf<WebView?>(null)}
  val player= remember(url){
   if(audio&&url.isNotBlank()) ExoPlayer.Builder(ctx).build().apply{setMediaItem(MediaItem.fromUri(url));prepare()} else null
  }
@@ -334,14 +337,22 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
     AndroidView(
      factory={c->
       WebView(c).apply{
+       webViewRef.value=this
        setBackgroundColor(android.graphics.Color.BLACK)
        settings.javaScriptEnabled=true
        settings.domStorageEnabled=true
        settings.mediaPlaybackRequiresUserGesture=true
        settings.loadsImagesAutomatically=true
        settings.setSupportMultipleWindows(false)
-       webChromeClient=WebChromeClient()
+       webChromeClient=object:WebChromeClient(){
+        override fun onProgressChanged(view:WebView?,progress:Int){webLoading=progress<100}
+       }
        webViewClient=object:WebViewClient(){
+        override fun onPageStarted(view:WebView?,url:String?,favicon:android.graphics.Bitmap?){webLoading=true;webError=""}
+        override fun onPageFinished(view:WebView?,url:String?){webLoading=false}
+        override fun onReceivedError(view:WebView?,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){
+         if(request.isForMainFrame){webLoading=false;webError="This page could not be loaded. Check your internet connection and retry."}
+        }
         override fun shouldOverrideUrlLoading(view:WebView?,request:android.webkit.WebResourceRequest):Boolean{
          val scheme=request.url.scheme?.lowercase()
          // Keep HTTP(S) navigation inside this WebView; block app/deep-link schemes.
@@ -376,6 +387,11 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
      },
      modifier=Modifier.fillMaxSize()
     )
+   }
+   if(webLoading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
+   if(webError.isNotBlank())Column(Modifier.fillMaxWidth().padding(top=10.dp)){
+    Text(webError,color=Gold,fontSize=12.sp)
+    TextButton(onClick={webError="";webLoading=true;webViewRef.value?.reload()}){Text("Retry page",color=Gold)}
    }
    Text("Web links stay inside the app. YouTube playback, ads, sign-in and regional restrictions remain controlled by YouTube.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(top=10.dp))
   }else if(player!=null){
