@@ -32,7 +32,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - The language preference is saved, but full interface translations are not implemented yet.
 - Watch history stores titles only; it is not a full playback-position history.
 - The learning section is introductory guidance and does not replace a qualified Quran/Tajweed teacher.
-- The repository workflow verifies compilation and APK packaging only. It does not perform emulator, device, playback, accessibility, privacy or policy QA.
+- GitHub Actions compiles and packages a debug APK and runs Compose UI smoke tests on an Android API 34 emulator. These automated tests do not verify real-device compatibility, external audio/video playback, live broadcaster availability, accessibility, privacy configuration or store-policy compliance.
 - The app integrates Google's UMP SDK, but the publisher must still configure applicable privacy messages in AdMob. The app uses Google's official AdMob test App ID and test banner unit ID. Replace these with the app owner's production IDs only after the AdMob account/app setup and policy review are complete. Never ship test IDs as a revenue configuration.
 - Before public distribution, prepare a compliant privacy policy, store listing, content/source review, production AdMob configuration and device QA.
 
