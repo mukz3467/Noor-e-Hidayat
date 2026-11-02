@@ -32,6 +32,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalInspectionMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -49,7 +55,7 @@ data class Surah(val number:Int,val name:String,val english:String,val meaning:S
 data class Ayah(val number:Int,val arabic:String,val english:String,val urdu:String)
 
 class MainActivity:ComponentActivity(){
- override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);window.statusBarColor=android.graphics.Color.rgb(6,31,23);window.navigationBarColor=android.graphics.Color.rgb(6,31,23);setContent{NoorApp()}}
+ override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);window.statusBarColor=android.graphics.Color.rgb(6,31,23);window.navigationBarColor=android.graphics.Color.rgb(6,31,23);MobileAds.initialize(this){};setContent{NoorApp()}}
 }
 
 private fun prefsHistory(ctx:android.content.Context):List<String> = (ctx.getSharedPreferences("noor_prefs",0).getString("history","")?:"").split("|").filter{it.isNotBlank()}
@@ -102,11 +108,13 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
-   if(page !in listOf("Reader","Media"))NavigationBar(containerColor=Deep){
+   if(page !in listOf("Reader","Media"))Column { NavigationBar(containerColor=Deep){
     listOf("Home","Quran","Discover","More").forEach{p->
      val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Recitations","Lectures","Live");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings")}
      NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Recitations";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
     }
+   }
+    AdMobBanner()
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
@@ -283,6 +291,24 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
    AndroidView(factory={c->PlayerView(c).apply{this.player=player;useController=true}},modifier=Modifier.fillMaxWidth().height(245.dp))
    Text("Quran audio streamed from AlQuran Cloud using Media3 ExoPlayer.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
   }else{Text("This media link is not supported.",color=Muted)}
+ }
+}
+@Composable private fun AdMobBanner(){
+ val context=LocalContext.current
+ val width=(LocalConfiguration.current.screenWidthDp-32).coerceAtLeast(320)
+ val isPreview=LocalInspectionMode.current
+ val adView=remember(context){AdView(context)}
+ DisposableEffect(adView){onDispose{adView.destroy()}}
+ LaunchedEffect(adView,width){
+  if(!isPreview){
+   adView.adUnitId="ca-app-pub-3940256099942544/6300978111"
+   adView.setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context,width))
+   adView.loadAd(AdRequest.Builder().build())
+  }
+ }
+ Column(Modifier.fillMaxWidth().background(Deep),horizontalAlignment=Alignment.CenterHorizontally){
+  Text("ADVERTISEMENT",color=Muted,fontSize=8.sp,letterSpacing=1.sp,modifier=Modifier.padding(top=3.dp,bottom=2.dp))
+  AndroidView(factory={adView},modifier=Modifier.fillMaxWidth().wrapContentHeight(),update={})
  }
 }
 @Composable private fun fieldColors()=OutlinedTextFieldDefaults.colors(focusedTextColor=Cream,unfocusedTextColor=Cream,focusedBorderColor=Gold,unfocusedBorderColor=Border,cursorColor=Gold)
