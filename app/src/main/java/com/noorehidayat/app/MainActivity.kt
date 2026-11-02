@@ -125,7 +125,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
      "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
-     "Recitations"->RecitationsScreen(surahs,surahLoading,catalogueError,{openSurah(it)},{surahReloadKey++})
+     "Recitations"->RecitationsScreen(surahs,surahLoading,catalogueError,{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{surahReloadKey++})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
      "More"->MoreScreen{page=it}
