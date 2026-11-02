@@ -329,7 +329,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
    Text(title,color=Cream,fontSize=27.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=6.dp))
    Text(if(audio)"Audio playback · Media3" else "In-app video · Provider player",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=5.dp))
   }
-  if(url.contains("youtube.com",true)||url.contains("youtu.be",true)||url.contains("mcs.org.sa",true)||videoId.isNotBlank()){
+  if(url.contains("youtube",true)||url.contains("youtu.be",true)||url.contains("mcs.org.sa",true)||videoId.isNotBlank()){
    Card(Modifier.fillMaxWidth().weight(1f),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.Black),border=BorderStroke(1.dp,Border)){
     AndroidView(
      factory={c->
@@ -354,7 +354,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
         }
        }
        val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
-       if(target.contains("youtube.com",true)||target.contains("youtu.be",true)){
+       if(target.contains("youtube",true)||target.contains("youtu.be",true)){
         val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"></head><body style="margin:0;background:#000"><iframe src="$target" title="YouTube video player" width="100%" height="100%" style="position:absolute;inset:0;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
         tag=target
         loadDataWithBaseURL("https://${c.packageName}/",html,"text/html","UTF-8",null)
@@ -368,7 +368,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
       val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
       if(webView.tag!=target){
        webView.tag=target
-       if(target.contains("youtube.com",true)||target.contains("youtu.be",true)){
+       if(target.contains("youtube",true)||target.contains("youtu.be",true)){
         val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"></head><body style="margin:0;background:#000"><iframe src="$target" title="YouTube video player" width="100%" height="100%" style="position:absolute;inset:0;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
         webView.loadDataWithBaseURL("https://${webView.context.packageName}/",html,"text/html","UTF-8",null)
        }else webView.loadUrl(target)
