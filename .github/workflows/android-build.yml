@@ -70,8 +70,5 @@ jobs:
           profile: pixel_2
           emulator-boot-timeout: 1200
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          disable-animations: true
-          script: |
-            adb devices -l
-            adb shell getprop sys.boot_completed
-            gradle --no-daemon :app:connectedDebugAndroidTest
+          disable-animations: false
+          script: gradle --no-daemon :app:connectedDebugAndroidTest
