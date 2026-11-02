@@ -141,6 +141,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var search by remember{mutableStateOf("")}
  var mediaTitle by remember{mutableStateOf("")}
  var mediaUrl by remember{mutableStateOf("")}
+ var mediaParentPage by remember{mutableStateOf("Home")}
  var videoCategory by remember{mutableStateOf("Islamic Lectures")}
  var videoParentPage by remember{mutableStateOf("Lectures")}
  var videoId by remember{mutableStateOf("")}
@@ -157,8 +158,8 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  LaunchedEffect(surahReloadKey){surahLoading=true;catalogueError="";try{surahs=getSurahs()}catch(e:Exception){catalogueError="Quran catalogue unavailable. Check your internet connection and tap Retry."}finally{surahLoading=false}}
  fun openSurah(s:Surah){selected=s;ayahs=emptyList();page="Reader";ayahLoading=true;readerError="";history=(listOf("Surah · "+s.english)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
  LaunchedEffect(selected,page,ayahReloadKey){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(s.number)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
- fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
- BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
+ fun openWeb(title:String,url:String){mediaParentPage=page;mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
+ BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->mediaParentPage;"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Media"))Column { NavigationBar(containerColor=Deep){
@@ -171,7 +172,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
-    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
+    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,contentDescription="Back",tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
