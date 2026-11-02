@@ -41,7 +41,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Minimum Android SDK: 24
 - Compile / target SDK: 35
 - Java / Kotlin JVM target: 17
-- Version: 1.0.0 (versionCode 6)
+- Version: 1.0.1 (versionCode 7)
 
 GitHub Actions builds a debug APK on pushes to `main`. Download the artifact from the latest successful **Android build** workflow run. Debug APKs are for testing, not a signed Play Store release.
 
