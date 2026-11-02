@@ -52,7 +52,7 @@ class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);window.statusBarColor=android.graphics.Color.rgb(6,31,23);window.navigationBarColor=android.graphics.Color.rgb(6,31,23);setContent{NoorApp()}}
 }
 
-private suspend fun api(path:String):String=withContext(Dispatchers.IO){
+private fun prefsHistory(ctx:android.content.Context):List<String> = (ctx.getSharedPreferences("noor_prefs",0).getString("history","")?:"").split("|").filter{it.isNotBlank()}\n\nprivate suspend fun api(path:String):String=withContext(Dispatchers.IO){
  val c=URL("https://api.alquran.cloud/v1/"+path).openConnection() as HttpURLConnection
  c.connectTimeout=15000;c.readTimeout=20000
  try{if(c.responseCode !in 200..299) error("HTTP "+c.responseCode);c.inputStream.bufferedReader().use{it.readText()}}finally{c.disconnect()}
@@ -81,7 +81,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var quizIndex by remember{mutableIntStateOf(0)}
  var quizScore by remember{mutableIntStateOf(0)}
  var quizAnswer by remember{mutableIntStateOf(-1)}
- var history by remember{mutableStateOf(emptyList<String>())}
+ var history by remember{mutableStateOf(prefsHistory(ctx))}
  val ctx= LocalContext.current
  val prefs=remember{ctx.getSharedPreferences("noor_prefs",0)}
  var favs by remember{mutableStateOf(setOf<Int>())}
@@ -94,7 +94,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  }
  fun openSurah(s:Surah){selected=s;page="Reader";loading=true;error=""}
  LaunchedEffect(selected,page){val s=selected;if(page=="Reader"&&s!=null){try{ayahs=getAyahs(s.number);error=""}catch(e:Exception){error="Could not load this surah. Tap retry."};loading=false}}
- fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30)}
+ fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
  BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
@@ -110,7 +110,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,loading,error,search,{search=it},{openSurah(it)},{loading=true})
-     "Reader"->ReaderScreen(selected,ayahs,loading,error,{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{selected?.let{openSurah(it)}})
+     "Reader"->ReaderScreen(selected,ayahs,loading,error,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{selected?.let{openSurah(it)}})
      "Recitations"->RecitationsScreen(surahs,{openSurah(it)},{openWeb(it,"https://www.youtube.com/results?search_query="+it.replace(" ","+"))})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){openWeb(it,"https://www.youtube.com/results?search_query="+it.replace(" ","+")+"+Islamic+lecture")}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
@@ -149,8 +149,8 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
  LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=10.dp,bottom=22.dp)){items(data.filter{search.isBlank()||it.english.contains(search,true)||it.meaning.contains(search,true)||it.number.toString()==search||it.name.contains(search)}){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(14.dp)).clickable{onOpen(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(40.dp).background(Emerald,RoundedCornerShape(10.dp)),contentAlignment=Alignment.Center){Text(s.number.toString(),color=Gold,fontWeight=FontWeight.Bold)};Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream,fontWeight=FontWeight.SemiBold);Text(s.meaning+" · "+s.ayahs+" Ayahs · "+s.type,color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=19.sp)}}}
  }
 }
-@Composable private fun ReaderScreen(s:Surah?,data:List<Ayah>,loading:Boolean,error:String,audio:(Surah)->Unit,retry:()->Unit){
- Base{if(s==null)return@Base;Heading("SURAH "+s.number+" · "+s.type,s.english);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=12.sp);Button({audio(s)},Modifier.fillMaxWidth().padding(vertical=10.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("  Listen · Mishary Alafasy")}
+@Composable private fun ReaderScreen(s:Surah?,data:List<Ayah>,loading:Boolean,error:String,isFav:Boolean,toggleFav:(Surah)->Unit,audio:(Surah)->Unit,retry:()->Unit){
+ Base{if(s==null)return@Base;Heading("SURAH "+s.number+" · "+s.type,s.english);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=12.sp);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={toggleFav(s)}){Icon(if(isFav)Icons.Default.Favorite else Icons.Default.FavoriteBorder,null,tint=Gold);Text(if(isFav)" Saved" else " Save",color=Gold)};Spacer(Modifier.weight(1f));Button({audio(s)},Modifier.fillMaxWidth().padding(vertical=10.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("  Listen · Mishary Alafasy")}
  if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold);if(error.isNotEmpty())Text(error,color=Gold,modifier=Modifier.clickable{retry()}.padding(10.dp))
  LazyColumn(contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){items(data){a->Column(Modifier.fillMaxWidth().background(Deep,RoundedCornerShape(14.dp)).padding(15.dp)){Text("AYAH "+a.number,color=Gold,fontSize=10.sp);Text(a.arabic,color=Cream,fontSize=27.sp,lineHeight=48.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth().padding(vertical=10.dp),fontFamily=FontFamily.Serif);Divider(color=Border);Text("ENGLISH",color=Gold,fontSize=9.sp,modifier=Modifier.padding(top=9.dp));Text(a.english,color=Cream,fontSize=14.sp,lineHeight=23.sp);Text("اردو ترجمہ",color=Gold,fontSize=11.sp,modifier=Modifier.padding(top=8.dp));Text(a.urdu,color=Cream,fontSize=16.sp,lineHeight=29.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth())}}}
  }
