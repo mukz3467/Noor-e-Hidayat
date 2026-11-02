@@ -81,6 +81,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var mediaTitle by remember{mutableStateOf("")}
  var mediaUrl by remember{mutableStateOf("")}
  var videoCategory by remember{mutableStateOf("Islamic Lectures")}
+ var videoParentPage by remember{mutableStateOf("Lectures")}
  var videoId by remember{mutableStateOf("")}
  var lang by remember{mutableStateOf("English")}
  var quizIndex by remember{mutableIntStateOf(0)}
@@ -98,7 +99,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  fun openSurah(s:Surah){selected=s;page="Reader";loading=true;error=""}
  LaunchedEffect(selected,page){val s=selected;if(page=="Reader"&&s!=null){try{ayahs=getAyahs(s.number);error=""}catch(e:Exception){error="Could not load this surah. Tap retry."};loading=false}}
  fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
- BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->"Lectures";else->"Home"}}
+ BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Media"))NavigationBar(containerColor=Deep){
@@ -109,16 +110,16 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
-    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
+    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,loading,error,search,{search=it},{openSurah(it)},{loading=true})
      "Reader"->ReaderScreen(selected,ayahs,loading,error,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{selected?.let{openSurah(it)}})
      "Recitations"->RecitationsScreen(surahs,{openSurah(it)},{})
-     "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoCategory=it;page="VideoLibrary"}
+     "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
      "More"->MoreScreen{page=it}
-     "Learning"->LearningScreen{videoCategory=it;page="VideoLibrary"}
+     "Learning"->LearningScreen{videoParentPage="Learning";videoCategory=it;page="VideoLibrary"}
      "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizAnswer==-1){if(a==quizData[quizIndex].third)quizScore++;quizAnswer=a}},{quizIndex=(quizIndex+1)%quizData.size;quizAnswer=-1})
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
@@ -131,7 +132,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
   }
  }
 }
-private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:"Quran";"Media"->t;"VideoLibrary"->t;"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";else->p}
+private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:"Quran";"Media"->t;"VideoLibrary"->videoCategory;"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";else->p}
 
 @Composable private fun Base(content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().background(Emerald).padding(horizontal=18.dp),content=content)}
 @Composable private fun Heading(kicker:String,title:String){Text(kicker.uppercase(),color=Gold,fontSize=10.sp,letterSpacing=2.sp);Text(title,color=Cream,fontSize=27.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=5.dp,bottom=14.dp))}
