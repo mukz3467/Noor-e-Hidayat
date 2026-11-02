@@ -114,8 +114,8 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Media"))Column { NavigationBar(containerColor=Deep){
     listOf("Home","Quran","Discover","More").forEach{p->
-     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Recitations","Lectures","Live");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings")}
-     NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Recitations";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
+     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings")}
+     NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
     }
    }
     AdMobBanner()
@@ -127,6 +127,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
      "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
+     "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
      "Recitations"->RecitationsScreen(surahs,surahLoading,catalogueError,{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{surahReloadKey++})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
@@ -184,6 +185,37 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
   }
  }
 }
+@Composable private fun DiscoverScreen(open:(String)->Unit){
+ val categories=listOf(
+  "Quran Recitations" to "Full-surah audio and Quran listening",
+  "Islamic Lectures" to "Talks on faith, character and daily life",
+  "Islamic Dramas" to "Faith-inspired stories and family viewing",
+  "Islamic Documentaries" to "History, places and educational films",
+  "Seerah of Prophet Muhammad ﷺ" to "Learn about the life of the Prophet",
+  "Stories of the Prophets" to "Lessons from the Prophets",
+  "Kids & Family" to "Family-friendly Islamic learning"
+ )
+ Base{
+  Heading("DISCOVER","Islamic content")
+  Text("Browse by category. Only verified, embeddable collections will be published here; unavailable collections are clearly marked.",color=Muted,fontSize=13.sp,lineHeight=19.sp)
+  Spacer(Modifier.height(12.dp))
+  LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp),contentPadding=PaddingValues(bottom=22.dp)){
+   items(categories){(name,description)->
+    Card(onClick={open(name)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
+     Row(Modifier.fillMaxWidth().padding(15.dp),verticalAlignment=Alignment.CenterVertically){
+      Icon(Icons.Default.PlayCircle,null,tint=Gold,modifier=Modifier.size(30.dp))
+      Column(Modifier.weight(1f).padding(start=12.dp)){
+       Text(name,color=Cream,fontWeight=FontWeight.SemiBold,fontSize=14.sp)
+       Text(description,color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=4.dp))
+      }
+      Icon(Icons.Default.ChevronRight,null,tint=Gold)
+     }
+    }
+   }
+  }
+ }
+}
+
 @Composable private fun CategoryScreen(title:String,categories:List<String>,open:(String)->Unit){
  val isLecture=title.contains("lecture",true)
  val eyebrow=if(isLecture)"LEARN FROM THE UMMAH" else "EXPLORE & LISTEN"
@@ -234,7 +266,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
     Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
      Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
      Text("Preparing this collection",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
-     Text("This category is ready. We will add verified, embeddable YouTube playlists here. No fake video links will be shown.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+     Text("There is no verified, embeddable playlist published in this category yet. We will not show guessed IDs or unverified video links.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
     }
    }
   }else{
