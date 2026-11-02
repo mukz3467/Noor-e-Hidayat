@@ -69,6 +69,8 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
 }
 
 @Composable private fun NoorApp(){
+ val ctx= LocalContext.current
+ val prefs=remember{ctx.getSharedPreferences("noor_prefs",0)}
  var page by remember{mutableStateOf("Home")}
  var surahs by remember{mutableStateOf(emptyList<Surah>())}
  var ayahs by remember{mutableStateOf(emptyList<Ayah>())}
@@ -84,8 +86,6 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var quizScore by remember{mutableIntStateOf(0)}
  var quizAnswer by remember{mutableIntStateOf(-1)}
  var history by remember{mutableStateOf(prefsHistory(ctx))}
- val ctx= LocalContext.current
- val prefs=remember{ctx.getSharedPreferences("noor_prefs",0)}
  var favs by remember{mutableStateOf(setOf<Int>())}
  LaunchedEffect(Unit){
   favs=prefs.getStringSet("favs",emptySet())?.mapNotNull{it.toIntOrNull()}?.toSet()?:emptySet()
