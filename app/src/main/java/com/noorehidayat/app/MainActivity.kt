@@ -307,7 +307,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
 @Composable private fun VideoLibraryScreen(category:String,open:(String)->Unit){
  Base{
   Heading("NOOR-E-HIDAYAT VIDEO LIBRARY",category)
-  Text("Videos will play inside Noor-e-Hidayat using YouTube's official embedded player. No YouTube API key or our own video hosting is required.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+  Text("Browse YouTube content inside Noor-e-Hidayat. Verified playlists use YouTube's embedded player; other categories open YouTube search results in the in-app browser.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
   Spacer(Modifier.height(16.dp))
   val playlist=curatedPlaylists.firstOrNull{it.category==category && it.playlistId.isNotBlank()}
   if(playlist==null){
@@ -316,7 +316,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
      Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
      Text("Browse this category",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
      Text("No verified playlist is configured yet. Browse YouTube results inside Noor-e-Hidayat and choose a video. Results are provided by YouTube and are not individually curated by this app.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
-     Button(onClick={open("https://www.youtube.com/results?search_query="+android.net.Uri.encode("Islamic "+category)))},modifier=Modifier.fillMaxWidth().padding(top=12.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text(" Browse on YouTube")}
+     Button(onClick={open("https://www.youtube.com/results?search_query="+android.net.Uri.encode("Islamic "+category)))},modifier=Modifier.fillMaxWidth().padding(top=12.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text("Browse on YouTube")}
     }
    }
   }else{
