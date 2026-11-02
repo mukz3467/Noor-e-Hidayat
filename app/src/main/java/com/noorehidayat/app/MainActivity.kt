@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.google.android.gms.ads.AdRequest
@@ -279,7 +281,16 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
  val player= remember(url){
   if(audio&&url.isNotBlank()) ExoPlayer.Builder(ctx).build().apply{setMediaItem(MediaItem.fromUri(url));prepare()} else null
  }
- DisposableEffect(player){onDispose{player?.release()}}
+ var playbackError by remember(url){mutableStateOf("")}
+ var buffering by remember(url){mutableStateOf(false)}
+ DisposableEffect(player){
+  val listener=object:Player.Listener{
+   override fun onPlayerError(error:PlaybackException){playbackError="Audio could not be played. Check your connection and retry."}
+   override fun onPlaybackStateChanged(state:Int){buffering=state==Player.STATE_BUFFERING;if(state==Player.STATE_READY)playbackError=""}
+  }
+  player?.addListener(listener)
+  onDispose{player?.removeListener(listener);player?.release()}
+ }
  Base{
   Column(Modifier.fillMaxWidth().padding(top=10.dp,bottom=14.dp)){
    Text("NOOR PLAYER",color=Gold,fontSize=10.sp,letterSpacing=2.sp,fontWeight=FontWeight.Bold)
@@ -336,7 +347,12 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
    }
    Text("Web links stay inside the app. YouTube playback, ads, sign-in and regional restrictions remain controlled by YouTube.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(top=10.dp))
   }else if(player!=null){
+   if(buffering)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
    AndroidView(factory={c->PlayerView(c).apply{this.player=player;useController=true}},modifier=Modifier.fillMaxWidth().height(245.dp))
+   if(playbackError.isNotBlank())Column(Modifier.fillMaxWidth().padding(top=10.dp)){
+    Text(playbackError,color=Gold,fontSize=12.sp)
+    TextButton(onClick={playbackError="";player.seekTo(0);player.prepare();player.playWhenReady=true}){Text("Retry audio",color=Gold)}
+   }
    Text("Quran audio streamed from AlQuran Cloud using Media3 ExoPlayer.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
   }else{Text("This media link is not supported.",color=Muted)}
  }
