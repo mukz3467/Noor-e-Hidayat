@@ -117,8 +117,7 @@ private suspend fun api(path:String):String=withContext(Dispatchers.IO){
  try{if(c.responseCode !in 200..299) error("HTTP "+c.responseCode);c.inputStream.bufferedReader().use{it.readText()}}finally{c.disconnect()}
 }
 private suspend fun getSurahs():List<Surah>{
- val j=JSONObject(api("surah"));require(j.optInt("code")==200);val a=j.getJSONArray("data")
- return (0 until a.length()).map{i->val o=a.getJSONObject(i);Surah(o.getInt("number"),o.getString("name"),o.getString("englishName"),o.getString("englishNameTranslation"),o.getInt("numberOfAyahs"),o.getString("revelationType"))}
+ val j=JSONObject(api("surah"));require(j.optInt("code")==200);val a=j.getJSONArray("data") return (0 until a.length()).map{i->val o=a.getJSONObject(i);Surah(o.getInt("number"),o.getString("name"),o.getString("englishName"),o.getString("englishNameTranslation"),o.getInt("numberOfAyahs"),o.getString("revelationType"))}
 }
 private suspend fun getAyahs(n:Int):List<Ayah>{
  val j=JSONObject(api("surah/"+n+"/editions/quran-uthmani,en.sahih,ur.jalandhry"));require(j.optInt("code")==200);val d=j.getJSONArray("data");val ar=d.getJSONObject(0).getJSONArray("ayahs");val en=d.getJSONObject(1).getJSONArray("ayahs");val ur=d.getJSONObject(2).getJSONArray("ayahs")
@@ -172,7 +171,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
-    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,contentDescription="Back",tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
+    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->mediaParentPage;"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,contentDescription="Back",tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
@@ -237,8 +236,7 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
 }
 @Composable private fun DiscoverScreen(open:(String)->Unit){
  val categories=listOf(
-  "Quran Recitations" to "Full-surah audio and Quran listening",
-  "Islamic Lectures" to "Talks on faith, character and daily life",
+  "Quran Recitations" to "Full-surah audio and Quran listening",  "Islamic Lectures" to "Talks on faith, character and daily life",
   "Islamic Dramas" to "Faith-inspired stories and family viewing",
   "Islamic Documentaries" to "History, places and educational films",
   "Seerah of Prophet Muhammad ﷺ" to "Learn about the life of the Prophet",
@@ -357,8 +355,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
 @Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].third)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].third],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
 @Composable private fun HistoryScreen(history:List<String>,clear:()->Unit){Base{Heading("YOUR ACTIVITY","Watch history");if(history.isNotEmpty()){TextButton(onClick=clear){Text("Clear history",color=Gold)}};if(history.isEmpty())Text("No recently opened items yet.",color=Muted);history.forEach{Text(it,color=Cream,modifier=Modifier.fillMaxWidth().padding(12.dp).background(Panel,RoundedCornerShape(10.dp)).padding(10.dp))}}}
 @Composable private fun SettingsScreen(lang:String,change:(String)->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){Base{Heading("PREFERENCES","Settings");Text("App language",color=Gold);listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Text("Language choice is saved; full interface translations are not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp));if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Privacy options")}}}}
-@SuppressLint("SetJavaScriptEnabled")
-@Composable private fun MediaScreen(title:String,url:String,videoId:String){
+@SuppressLint("SetJavaScriptEnabled")@Composable private fun MediaScreen(title:String,url:String,videoId:String){
  val ctx=LocalContext.current
  val audio=url.endsWith(".mp3",ignoreCase=true)
  var webLoading by remember(url){mutableStateOf(true)}
