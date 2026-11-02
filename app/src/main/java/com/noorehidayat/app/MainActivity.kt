@@ -308,7 +308,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
 }
 @Composable private fun AdMobBanner(){
  val context=LocalContext.current
- val width=(LocalConfiguration.current.screenWidthDp-32).coerceAtLeast(320)
+ val width=(LocalConfiguration.current.screenWidthDp-32).coerceAtLeast(1)
  val isPreview=LocalInspectionMode.current
  val adView=remember(context){AdView(context)}
  DisposableEffect(adView){onDispose{adView.destroy()}}
