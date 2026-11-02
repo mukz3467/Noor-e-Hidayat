@@ -276,12 +276,25 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
         }
        }
        val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
-       loadUrl(target)
+       if(target.contains("youtube.com",true)||target.contains("youtu.be",true)){
+        val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"></head><body style="margin:0;background:#000"><iframe src="$target" title="YouTube video player" width="100%" height="100%" style="position:absolute;inset:0;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
+        tag=target
+        loadDataWithBaseURL("https://${c.packageName}/",html,"text/html","UTF-8",null)
+       }else{
+        tag=target
+        loadUrl(target)
+       }
       }
      },
      update={webView->
       val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
-      if(webView.url!=target)webView.loadUrl(target)
+      if(webView.tag!=target){
+       webView.tag=target
+       if(target.contains("youtube.com",true)||target.contains("youtu.be",true)){
+        val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"></head><body style="margin:0;background:#000"><iframe src="$target" title="YouTube video player" width="100%" height="100%" style="position:absolute;inset:0;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
+        webView.loadDataWithBaseURL("https://${webView.context.packageName}/",html,"text/html","UTF-8",null)
+       }else webView.loadUrl(target)
+      }
      },
      modifier=Modifier.fillMaxSize()
     )
