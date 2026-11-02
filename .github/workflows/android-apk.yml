@@ -16,9 +16,6 @@ permissions:
 jobs:
   build-debug-apk:
     runs-on: ubuntu-latest
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -31,22 +28,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Locate Android SDK manager
-        id: android-sdk
-        shell: bash
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls -la "$ANDROID_HOME" || true
-          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager 2>/dev/null | head -n 1)"
-          if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager was not found under $ANDROID_HOME/cmdline-tools"
-            exit 1
-          fi
-          echo "sdkmanager=$SDKMANAGER" >> "$GITHUB_OUTPUT"
-      - name: Accept Android SDK licenses
-        run: yes | "${{ steps.android-sdk.outputs.sdkmanager }}" --licenses
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
       - name: Install Android platform and build tools
-        run: "${{ steps.android-sdk.outputs.sdkmanager }}" 'platforms;android-35' 'build-tools;35.0.0'
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
       - name: Upload APK
