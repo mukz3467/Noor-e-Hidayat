@@ -68,4 +68,10 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
-          script: gradle --no-daemon :app:connectedDebugAndroidTest
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            adb devices -l
+            adb shell getprop sys.boot_completed
+            gradle --no-daemon :app:connectedDebugAndroidTest
