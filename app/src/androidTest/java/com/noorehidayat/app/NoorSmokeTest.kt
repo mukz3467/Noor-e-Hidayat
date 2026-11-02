@@ -57,9 +57,10 @@ class NoorSmokeTest {
     fun discoverShowsHonestEmptyStateInsteadOfDeadEnd() {
         composeRule.onNodeWithText("Discover").performClick()
         composeRule.onNodeWithText("Islamic Dramas").performClick()
-        composeRule.onNodeWithText("Preparing this collection").assertIsDisplayed()
+        composeRule.onNodeWithText("Browse this category").assertIsDisplayed()
+        composeRule.onNodeWithText("Browse on YouTube").assertIsDisplayed()
         composeRule.onNodeWithText(
-            "There is no verified, embeddable playlist published in this category yet. We will not show guessed IDs or unverified video links."
+            "No verified playlist is configured yet. Browse YouTube results inside Noor-e-Hidayat and choose a video. Results are provided by YouTube and are not individually curated by this app."
         ).assertIsDisplayed()
     }
 }
