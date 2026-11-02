@@ -326,6 +326,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
   player?.addListener(listener)
   onDispose{player?.removeListener(listener);player?.release()}
  }
+ DisposableEffect(url){onDispose{webViewRef.value?.stopLoading();webViewRef.value?.destroy();webViewRef.value=null}}
  Base{
   Column(Modifier.fillMaxWidth().padding(top=10.dp,bottom=14.dp)){
    Text("NOOR PLAYER",color=Gold,fontSize=10.sp,letterSpacing=2.sp,fontWeight=FontWeight.Bold)
