@@ -7,7 +7,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Native home dashboard with an emerald, gold and cream visual theme.
 - Quran catalogue with search across surah names, translations and numbers.
 - Surah reader with Uthmani Arabic text, English Sahih International translation and Urdu Jalandhry translation.
-- Surah audio playback through AndroidX Media3 / ExoPlayer using AlQuran Cloud audio.
+- Surah audio playback through AndroidX Media3 / ExoPlayer using AlQuran Cloud audio, with buffering/error feedback and retry controls.
 - Recitation catalogue.
 - Beginner Quran-learning guidance covering Arabic letters, harakat, makharij, introductory Tajweed topics and revision.
 - Basic Islamic knowledge quiz with scoring and replay.
