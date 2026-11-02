@@ -42,7 +42,7 @@ function updateFavButton(){if(!current)return;let yes=store('favs').some(x=>x.id
 function renderSaved(el,k){let a=store(k);document.getElementById(el).innerHTML=a.length?a.map(row).join(''):'<div class="notice">Nothing saved here yet.</div>'}
 function clearHistory(){save('history',[]);renderSaved('historyList','history');alert('Watch history cleared.')}
 function searchVideos(s){let v=s.toLowerCase().trim();let a=vids.filter(x=>x.title.toLowerCase().includes(v));document.getElementById('featured').innerHTML=v?a.map(row).join(''):vids.filter(x=>x.type==='Quran').map(row).join('')}
-function openSearch(q){let u='https://www.youtube.com/results?search_query='+encodeURIComponent(q);if(window.AndroidBridge&&window.AndroidBridge.openExternal)window.AndroidBridge.openExternal(u);else window.open(u,'_blank')}
+function openSearch(q){let u='https://www.youtube.com/results?search_query='+encodeURIComponent(q);location.href=u}
 function renderQuiz(){let q=qs[questionIndex];answered=false;document.getElementById('question').textContent=q[0];document.getElementById('feedback').textContent='Choose an answer.';document.getElementById('answers').innerHTML=q[1].map((a,i)=>'<button class="goldbtn outline" onclick="answer('+i+')">'+a+'</button>').join('');document.getElementById('score').textContent='Score: '+score}
 function answer(i){if(answered)return;answered=true;let q=qs[questionIndex];if(i===q[2]){score++;document.getElementById('feedback').textContent='Correct. Well done!'}else document.getElementById('feedback').textContent='Correct answer: '+q[1][q[2]];document.getElementById('score').textContent='Score: '+score}
 function nextQuestion(){questionIndex=(questionIndex+1)%qs.length;renderQuiz()}
