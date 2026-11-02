@@ -117,7 +117,8 @@ private suspend fun api(path:String):String=withContext(Dispatchers.IO){
  try{if(c.responseCode !in 200..299) error("HTTP "+c.responseCode);c.inputStream.bufferedReader().use{it.readText()}}finally{c.disconnect()}
 }
 private suspend fun getSurahs():List<Surah>{
- val j=JSONObject(api("surah"));require(j.optInt("code")==200);val a=j.getJSONArray("data") return (0 until a.length()).map{i->val o=a.getJSONObject(i);Surah(o.getInt("number"),o.getString("name"),o.getString("englishName"),o.getString("englishNameTranslation"),o.getInt("numberOfAyahs"),o.getString("revelationType"))}
+ val j=JSONObject(api("surah"));require(j.optInt("code")==200);val a=j.getJSONArray("data")
+ return (0 until a.length()).map{i->val o=a.getJSONObject(i);Surah(o.getInt("number"),o.getString("name"),o.getString("englishName"),o.getString("englishNameTranslation"),o.getInt("numberOfAyahs"),o.getString("revelationType"))}
 }
 private suspend fun getAyahs(n:Int):List<Ayah>{
  val j=JSONObject(api("surah/"+n+"/editions/quran-uthmani,en.sahih,ur.jalandhry"));require(j.optInt("code")==200);val d=j.getJSONArray("data");val ar=d.getJSONObject(0).getJSONArray("ayahs");val en=d.getJSONObject(1).getJSONArray("ayahs");val ur=d.getJSONObject(2).getJSONArray("ayahs")
