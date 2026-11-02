@@ -129,7 +129,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
      "More"->MoreScreen{page=it}
-     "Learning"->LearningScreen{videoParentPage="Learning";videoCategory=it;page="VideoLibrary"}
+     "Learning"->LearningScreen()
      "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizIndex<quizData.size&&quizAnswer==-1){if(a==quizData[quizIndex].third)quizScore++;quizAnswer=a}},{if(quizIndex>=quizData.size){quizIndex=0;quizScore=0}else{quizIndex++};quizAnswer=-1})
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
@@ -232,7 +232,30 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
 
 @Composable private fun LiveScreen(open:(String,String)->Unit){Base{Heading("LIVE BROADCASTS","Makkah & Madinah");Text("Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.",color=Muted,fontSize=13.sp);Spacer(Modifier.height(18.dp));Tile("Masjid al-Haram · Makkah","Official Saudi broadcaster","🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")};Spacer(Modifier.height(12.dp));Tile("Al-Masjid an-Nabawi · Madinah","Official Saudi broadcaster","☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}}}
 @Composable private fun MoreScreen(go:(String)->Unit){Base{Heading("YOUR SPACE","More features");listOf("Favourites","History","Learning","Quiz","Settings").forEach{Tile(it,"Open "+it,"✧"){go(it)};Spacer(Modifier.height(9.dp))}}}
-@Composable private fun LearningScreen(open:(String)->Unit){Base{Heading("BUILD YOUR SKILLS","Quran learning");listOf("Arabic alphabet" to "Start with letters and correct sounds.","Makharij" to "Learn articulation points with a qualified teacher.","Basic Tajweed" to "Study Noon Sakinah, Tanween, Meem Sakinah, Madd and Qalqalah.","Daily revision" to "Read consistently and focus on correct pronunciation.").forEach{(t,d)->Card(Modifier.fillMaxWidth().padding(bottom=9.dp),colors=CardDefaults.cardColors(containerColor=Panel)){Column(Modifier.padding(14.dp)){Text(t,color=Gold,fontWeight=FontWeight.Bold);Text(d,color=Cream,fontSize=13.sp,modifier=Modifier.padding(top=6.dp))}}};Button({open("Learn Quran Arabic alphabet Tajweed beginner")},Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Find beginner lessons")}}}
+@Composable private fun LearningScreen(){
+ Base{
+  Heading("BUILD YOUR SKILLS","Quran learning")
+  Text("A structured beginner path. Learn gradually, practise daily, and study pronunciation with a qualified Quran teacher.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+  Spacer(Modifier.height(12.dp))
+  val lessons=listOf(
+   Triple("1. Arabic alphabet","Recognise the 28 Arabic letters and their different written forms.","Start by learning each letter's name, shape and basic sound. Practise connecting letters at the beginning, middle and end of words."),
+   Triple("2. Harakat and joining","Learn Fathah, Kasrah, Dammah, Sukoon and Shaddah.","Read short combinations slowly. Focus on the vowel sound and whether a letter is sakin or doubled."),
+   Triple("3. Makharij al-Huruf","Understand where Arabic letters are articulated.","The articulation points include the throat, tongue, lips and nasal passage. Correct pronunciation needs listening to and correction by a qualified teacher."),
+   Triple("4. Basic Tajweed","Study Noon Sakinah, Tanween, Meem Sakinah, Madd and Qalqalah.","Learn each rule with examples from a teacher, then practise by listening and repeating. Do not rely on text descriptions alone for pronunciation."),
+   Triple("5. Daily revision","Build a consistent and realistic practice routine.","Spend 10–15 minutes revising known letters and reading a short passage. Record difficult letters and ask your teacher to correct them.")
+  )
+  lessons.forEach{(title,summary,detail)->
+   Card(Modifier.fillMaxWidth().padding(bottom=10.dp),shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
+    Column(Modifier.padding(15.dp)){
+     Text(title,color=Gold,fontWeight=FontWeight.Bold,fontSize=16.sp)
+     Text(summary,color=Cream,fontSize=13.sp,lineHeight=19.sp,modifier=Modifier.padding(top=6.dp))
+     Text(detail,color=Muted,fontSize=12.sp,lineHeight=18.sp,modifier=Modifier.padding(top=8.dp))
+    }
+   }
+  }
+  Text("Learning note: This guide is introductory and does not replace a qualified teacher or a verified Tajweed lesson.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(bottom=20.dp))
+ }
+}
 private data class Q(val prompt:String,val options:List<String>,val third:Int)
 private val quizData=listOf(Q("How many daily obligatory prayers are there?",listOf("Three","Five","Seven"),1),Q("Which month do Muslims fast?",listOf("Ramadan","Shawwal","Muharram"),0),Q("Which direction do Muslims face in salah?",listOf("Jerusalem","The Kaaba","Madinah"),1),Q("What is the first month of the Islamic calendar?",listOf("Ramadan","Muharram","Rajab"),1),Q("What is the holy book of Islam?",listOf("Quran","Torah","Psalms"),0))
 @Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].third)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].third],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
