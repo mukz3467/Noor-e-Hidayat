@@ -186,7 +186,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
      "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},privacyOptionsRequired,onPrivacyOptions)
-     "VideoLibrary"->VideoLibraryScreen(videoCategory){playlistId->if(playlistId.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+playlistId+"&playsinline=1")}
+     "VideoLibrary"->VideoLibraryScreen(videoCategory){targetUrl->openWeb(videoCategory,targetUrl)}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
      else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
     }
@@ -304,7 +304,7 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
 private data class CuratedPlaylist(val category:String,val playlistId:String)
 private val curatedPlaylists = emptyList<CuratedPlaylist>()
 
-@Composable private fun VideoLibraryScreen(category:String,play:(String)->Unit){
+@Composable private fun VideoLibraryScreen(category:String,open:(String)->Unit){
  Base{
   Heading("NOOR-E-HIDAYAT VIDEO LIBRARY",category)
   Text("Videos will play inside Noor-e-Hidayat using YouTube's official embedded player. No YouTube API key or our own video hosting is required.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
@@ -314,12 +314,13 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
     Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
      Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
-     Text("Preparing this collection",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
-     Text("There is no verified, embeddable playlist published in this category yet. We will not show guessed IDs or unverified video links.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+     Text("Browse this category",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
+     Text("No verified playlist is configured yet. Browse YouTube results inside Noor-e-Hidayat and choose a video. Results are provided by YouTube and are not individually curated by this app.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+     Button(onClick={open("https://www.youtube.com/results?search_query="+android.net.Uri.encode("Islamic "+category)))},modifier=Modifier.fillMaxWidth().padding(top=12.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text(" Browse on YouTube")}
     }
    }
   }else{
-   Button(onClick={play(playlist.playlistId)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("Play collection")}
+   Button(onClick={open("https://www.youtube-nocookie.com/embed/videoseries?list="+playlist.playlistId+"&playsinline=1")},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("Play collection")}
   }
  }
 }
@@ -415,7 +416,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
         }
        }
        val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
-       if(target.contains("youtube",true)||target.contains("youtu.be",true)){
+       if((target.contains("youtube",true)||target.contains("youtu.be",true)) && !target.contains("/results?",true)){
         val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><style>html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style></head><body><iframe src="$target" title="YouTube video player" width="100%" height="100%" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
         tag=target
         loadDataWithBaseURL("https://${c.packageName}/",html,"text/html","UTF-8",null)
@@ -429,7 +430,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
       val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
       if(webView.tag!=target){
        webView.tag=target
-       if(target.contains("youtube",true)||target.contains("youtu.be",true)){
+       if((target.contains("youtube",true)||target.contains("youtu.be",true)) && !target.contains("/results?",true)){
         val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><style>html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style></head><body><iframe src="$target" title="YouTube video player" width="100%" height="100%" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
         webView.loadDataWithBaseURL("https://${webView.context.packageName}/",html,"text/html","UTF-8",null)
        }else webView.loadUrl(target)
