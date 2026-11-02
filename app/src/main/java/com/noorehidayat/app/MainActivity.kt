@@ -80,6 +80,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var search by remember{mutableStateOf("")}
  var mediaTitle by remember{mutableStateOf("")}
  var mediaUrl by remember{mutableStateOf("")}
+ var videoCategory by remember{mutableStateOf("Islamic Lectures")}
  var videoId by remember{mutableStateOf("")}
  var lang by remember{mutableStateOf("English")}
  var quizIndex by remember{mutableIntStateOf(0)}
@@ -97,7 +98,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  fun openSurah(s:Surah){selected=s;page="Reader";loading=true;error=""}
  LaunchedEffect(selected,page){val s=selected;if(page=="Reader"&&s!=null){try{ayahs=getAyahs(s.number);error=""}catch(e:Exception){error="Could not load this surah. Tap retry."};loading=false}}
  fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
- BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";else->"Home"}}
+ BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->"Lectures";else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Media"))NavigationBar(containerColor=Deep){
@@ -113,15 +114,16 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,loading,error,search,{search=it},{openSurah(it)},{loading=true})
      "Reader"->ReaderScreen(selected,ayahs,loading,error,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{selected?.let{openSurah(it)}})
-     "Recitations"->RecitationsScreen(surahs,{openSurah(it)},{openWeb(it,"https://www.youtube.com/results?search_query="+it.replace(" ","+"))})
-     "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){openWeb(it,"https://www.youtube.com/results?search_query="+it.replace(" ","+")+"+Islamic+lecture")}
+     "Recitations"->RecitationsScreen(surahs,{openSurah(it)},{})
+     "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
      "More"->MoreScreen{page=it}
-     "Learning"->LearningScreen{openWeb(it,"https://www.youtube.com/results?search_query="+it.replace(" ","+"))}
+     "Learning"->LearningScreen{videoCategory=it;page="VideoLibrary"}
      "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizAnswer==-1){if(a==quizData[quizIndex].third)quizScore++;quizAnswer=a}},{quizIndex=(quizIndex+1)%quizData.size;quizAnswer=-1})
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
      "Settings"->SettingsScreen(lang){lang=it;prefs.edit().putString("lang",it).apply()}
+     "VideoLibrary"->VideoLibraryScreen(videoCategory){playlistId->if(playlistId.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed?listType=playlist&list="+playlistId+"&playsinline=1")}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
      else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
     }
@@ -129,7 +131,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
   }
  }
 }
-private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:"Quran";"Media"->t;"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";else->p}
+private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:"Quran";"Media"->t;"VideoLibrary"->t;"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";else->p}
 
 @Composable private fun Base(content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().background(Emerald).padding(horizontal=18.dp),content=content)}
 @Composable private fun Heading(kicker:String,title:String){Text(kicker.uppercase(),color=Gold,fontSize=10.sp,letterSpacing=2.sp);Text(title,color=Cream,fontSize=27.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=5.dp,bottom=14.dp))}
@@ -193,6 +195,30 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
   }
  }
 }
+
+private data class CuratedPlaylist(val category:String,val playlistId:String)
+private val curatedPlaylists = emptyList<CuratedPlaylist>()
+
+@Composable private fun VideoLibraryScreen(category:String,play:(String)->Unit){
+ Base{
+  Heading("NOOR-E-HIDAYAT VIDEO LIBRARY",category)
+  Text("Videos will play inside Noor-e-Hidayat using YouTube's official embedded player. No YouTube API key or our own video hosting is required.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+  Spacer(Modifier.height(16.dp))
+  val playlist=curatedPlaylists.firstOrNull{it.category==category && it.playlistId.isNotBlank()}
+  if(playlist==null){
+   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
+    Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
+     Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
+     Text("Preparing this collection",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
+     Text("This category is ready. We will add verified, embeddable YouTube playlists here. No fake video links will be shown.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+    }
+   }
+  }else{
+   Button(onClick={play(playlist.playlistId)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("Play collection")}
+  }
+ }
+}
+
 @Composable private fun LiveScreen(open:(String,String)->Unit){Base{Heading("LIVE BROADCASTS","Makkah & Madinah");Text("Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.",color=Muted,fontSize=13.sp);Spacer(Modifier.height(18.dp));Tile("Masjid al-Haram · Makkah","Official Saudi broadcaster","🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")};Spacer(Modifier.height(12.dp));Tile("Al-Masjid an-Nabawi · Madinah","Official Saudi broadcaster","☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}}}
 @Composable private fun MoreScreen(go:(String)->Unit){Base{Heading("YOUR SPACE","More features");listOf("Favourites","History","Learning","Quiz","Settings").forEach{Tile(it,"Open "+it,"✧"){go(it)};Spacer(Modifier.height(9.dp))}}}
 @Composable private fun LearningScreen(open:(String)->Unit){Base{Heading("BUILD YOUR SKILLS","Quran learning");listOf("Arabic alphabet" to "Start with letters and correct sounds.","Makharij" to "Learn articulation points with a qualified teacher.","Basic Tajweed" to "Study Noon Sakinah, Tanween, Meem Sakinah, Madd and Qalqalah.","Daily revision" to "Read consistently and focus on correct pronunciation.").forEach{(t,d)->Card(Modifier.fillMaxWidth().padding(bottom=9.dp),colors=CardDefaults.cardColors(containerColor=Panel)){Column(Modifier.padding(14.dp)){Text(t,color=Gold,fontWeight=FontWeight.Bold);Text(d,color=Cream,fontSize=13.sp,modifier=Modifier.padding(top=6.dp))}}};Button({open("Learn Quran Arabic alphabet Tajweed beginner")},Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Find beginner lessons")}}}
