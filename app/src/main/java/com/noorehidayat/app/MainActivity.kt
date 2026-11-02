@@ -125,7 +125,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
      "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
-     "Recitations"->RecitationsScreen(surahs,{openSurah(it)},{})
+     "Recitations"->RecitationsScreen(surahs,surahLoading,catalogueError,{openSurah(it)},{surahReloadKey++})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
      "More"->MoreScreen{page=it}
@@ -160,17 +160,28 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
 @Composable private fun QuranScreen(data:List<Surah>,loading:Boolean,error:String,search:String,onSearch:(String)->Unit,onOpen:(Surah)->Unit,retry:()->Unit){
  Base{Heading("THE HOLY QURAN","114 Surahs");OutlinedTextField(search,onSearch,Modifier.fillMaxWidth(),placeholder={Text("Search surah or number",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},singleLine=true,colors=fieldColors())
  if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
- if(error.isNotEmpty())Text(error,color=Gold,modifier=Modifier.clickable{retry()}.padding(10.dp))
+ if(error.isNotEmpty())Column(Modifier.fillMaxWidth().padding(10.dp)){Text(error,color=Gold);TextButton(onClick=retry){Text("Retry",color=Gold)}}
  LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=10.dp,bottom=22.dp)){items(data.filter{search.isBlank()||it.english.contains(search,true)||it.meaning.contains(search,true)||it.number.toString()==search||it.name.contains(search)}){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(14.dp)).clickable{onOpen(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(40.dp).background(Emerald,RoundedCornerShape(10.dp)),contentAlignment=Alignment.Center){Text(s.number.toString(),color=Gold,fontWeight=FontWeight.Bold)};Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream,fontWeight=FontWeight.SemiBold);Text(s.meaning+" · "+s.ayahs+" Ayahs · "+s.type,color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=19.sp)}}}
  }
 }
 @Composable private fun ReaderScreen(s:Surah?,data:List<Ayah>,loading:Boolean,error:String,isFav:Boolean,toggleFav:(Surah)->Unit,audio:(Surah)->Unit,retry:()->Unit){
  Base{if(s==null)return@Base;Heading("SURAH "+s.number+" · "+s.type,s.english);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=12.sp);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={toggleFav(s)}){Icon(if(isFav)Icons.Default.Favorite else Icons.Default.FavoriteBorder,null,tint=Gold);Text(if(isFav)" Saved" else " Save",color=Gold)};Spacer(Modifier.weight(1f));Button({audio(s)},Modifier.fillMaxWidth().padding(vertical=10.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("  Listen · Mishary Alafasy")}}
- if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold);if(error.isNotEmpty())Text(error,color=Gold,modifier=Modifier.clickable{retry()}.padding(10.dp))
+ if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold);if(error.isNotEmpty())Column(Modifier.fillMaxWidth().padding(10.dp)){Text(error,color=Gold);TextButton(onClick=retry){Text("Retry",color=Gold)}}
  LazyColumn(contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){items(data){a->Column(Modifier.fillMaxWidth().background(Deep,RoundedCornerShape(14.dp)).padding(15.dp)){Text("AYAH "+a.number,color=Gold,fontSize=10.sp);Text(a.arabic,color=Cream,fontSize=27.sp,lineHeight=48.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth().padding(vertical=10.dp),fontFamily=FontFamily.Serif);Divider(color=Border);Text("ENGLISH",color=Gold,fontSize=9.sp,modifier=Modifier.padding(top=9.dp));Text(a.english,color=Cream,fontSize=14.sp,lineHeight=23.sp);Text("اردو ترجمہ",color=Gold,fontSize=11.sp,modifier=Modifier.padding(top=8.dp));Text(a.urdu,color=Cream,fontSize=16.sp,lineHeight=29.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth())}}}
  }
 }
-@Composable private fun RecitationsScreen(data:List<Surah>,play:(Surah)->Unit,search:(String)->Unit){Base{Heading("LISTEN & REFLECT","Beautiful recitations");Text("Listen to the full surah recitation by Mishary Rashid Alafasy.",color=Muted,fontSize=13.sp);LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=12.dp,bottom=20.dp)){items(data){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).clickable{play(s)}.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.PlayCircle,null,tint=Gold);Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=18.sp)}}}}}
+@Composable private fun RecitationsScreen(data:List<Surah>,loading:Boolean,error:String,play:(Surah)->Unit,retry:()->Unit){
+ Base{
+  Heading("LISTEN & REFLECT","Beautiful recitations")
+  Text("Listen to the full surah recitation by Mishary Rashid Alafasy.",color=Muted,fontSize=13.sp)
+  if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
+  if(error.isNotEmpty())Column(Modifier.fillMaxWidth().padding(vertical=12.dp)){Text(error,color=Gold);TextButton(onClick=retry){Text("Retry",color=Gold)}}
+  if(!loading&&error.isEmpty()&&data.isEmpty())Text("No recitations are available right now. Check your internet connection and try again.",color=Muted,modifier=Modifier.padding(top=14.dp))
+  LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=12.dp,bottom=20.dp)){
+   items(data){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).clickable{play(s)}.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.PlayCircle,null,tint=Gold);Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=18.sp)}}
+  }
+ }
+}
 @Composable private fun CategoryScreen(title:String,categories:List<String>,open:(String)->Unit){
  val isLecture=title.contains("lecture",true)
  val eyebrow=if(isLecture)"LEARN FROM THE UMMAH" else "EXPLORE & LISTEN"
