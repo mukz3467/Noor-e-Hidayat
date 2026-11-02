@@ -13,7 +13,8 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Basic Islamic knowledge quiz with scoring and replay.
 - Makkah and Madinah broadcaster pages displayed in the in-app WebView.
 - Favourites, lightweight recently played-title history and saved language preference.
-- Adaptive anchored AdMob banner on standard screens; banner is hidden on Quran Reader and Media Player screens.
+- Adaptive anchored AdMob test banner on standard screens; banner is hidden on Quran Reader and Media Player screens.
+- Google UMP consent refresh on app launch, consent-form handling, consent-gated ad requests and a privacy-options entry point when required.
 - In-app WebView for provider-controlled web/video content.
 
 ## Data and service dependencies
@@ -32,7 +33,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Watch history stores titles only; it is not a full playback-position history.
 - The learning section is introductory guidance and does not replace a qualified Quran/Tajweed teacher.
 - The repository workflow verifies compilation and APK packaging only. It does not perform emulator, device, playback, accessibility, privacy or policy QA.
-- The manifest currently contains Google's official AdMob test App ID and the app uses Google's official test banner unit ID. Replace these with the app owner's production IDs only after the AdMob account/app setup and policy review are complete. Never ship test IDs as a revenue configuration.
+- The app integrates Google's UMP SDK, but the publisher must still configure applicable privacy messages in AdMob. The app uses Google's official AdMob test App ID and test banner unit ID. Replace these with the app owner's production IDs only after the AdMob account/app setup and policy review are complete. Never ship test IDs as a revenue configuration.
 - Before public distribution, prepare a compliant privacy policy, store listing, content/source review, production AdMob configuration and device QA.
 
 ## Android build
@@ -41,7 +42,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Minimum Android SDK: 24
 - Compile / target SDK: 35
 - Java / Kotlin JVM target: 17
-- Version: 1.0.1 (versionCode 7)
+- Version: 1.0.2 (versionCode 8)
 
 GitHub Actions builds a debug APK on pushes to `main`. Download the artifact from the latest successful **Android build** workflow run. Debug APKs are for testing, not a signed Play Store release.
 
@@ -50,4 +51,5 @@ GitHub Actions builds a debug APK on pushes to `main`. Download the artifact fro
 - AlQuran Cloud API: https://alquran.cloud/api
 - AndroidX Media3: https://developer.android.com/media/media3
 - Google Mobile Ads SDK: https://developers.google.com/admob/android/quick-start
+- Google UMP consent SDK: https://developers.google.com/admob/android/privacy
 - YouTube embedded player requirements: https://developers.google.com/youtube/terms/required-minimum-functionality
