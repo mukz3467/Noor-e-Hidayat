@@ -58,6 +58,7 @@ private val Muted=Color(0xFFB7C9BC)
 private val Border=Color(0xFF355B45)
 data class Surah(val number:Int,val name:String,val english:String,val meaning:String,val ayahs:Int,val type:String)
 data class Ayah(val number:Int,val arabic:String,val translation:String)
+data class Recitation(val reciter:String,val style:String,val server:String,val surahs:Set<Int>){val label get()="$reciter · $style"}
 
 class MainActivity:ComponentActivity(){
  private lateinit var consentInformation:ConsentInformation
@@ -116,6 +117,26 @@ private suspend fun api(path:String):String=withContext(Dispatchers.IO){
  c.connectTimeout=15000;c.readTimeout=20000
  try{if(c.responseCode !in 200..299) error("HTTP "+c.responseCode);c.inputStream.bufferedReader().use{it.readText()}}finally{c.disconnect()}
 }
+private suspend fun getRecitations():List<Recitation> = withContext(Dispatchers.IO){
+ val connection=URL("https://www.mp3quran.net/api/v3/reciters?language=eng").openConnection() as HttpURLConnection
+ connection.connectTimeout=15000;connection.readTimeout=20000
+ try{
+  if(connection.responseCode !in 200..299) error("HTTP "+connection.responseCode)
+  val root=JSONObject(connection.inputStream.bufferedReader().use{it.readText()})
+  val reciters=root.getJSONArray("reciters")
+  buildList{
+   for(i in 0 until reciters.length()){
+    val reciter=reciters.getJSONObject(i);val moshafs=reciter.optJSONArray("moshaf")?:continue
+    for(k in 0 until moshafs.length()){
+     val m=moshafs.getJSONObject(k);val server=m.optString("server").trim()
+     val available=m.optString("surah_list").split(",").mapNotNull{it.trim().toIntOrNull()}.filter{it in 1..114}.toSet()
+     if(server.startsWith("https://")&&available.isNotEmpty()) add(Recitation(reciter.optString("name","Unknown reciter"),m.optString("name","Quran recitation"),server,available))
+    }
+   }
+  }.sortedBy{it.reciter.lowercase()}
+ }finally{connection.disconnect()}
+}
+private fun recitationUrl(recitation:Recitation,surah:Int)=recitation.server.trimEnd('/')+"/"+surah.toString().padStart(3,'0')+".mp3"
 private suspend fun getSurahs():List<Surah>{
  val j=JSONObject(api("surah"));require(j.optInt("code")==200);val a=j.getJSONArray("data")
  return (0 until a.length()).map{i->val o=a.getJSONObject(i);Surah(o.getInt("number"),o.getString("name"),o.getString("englishName"),o.getString("englishNameTranslation"),o.getInt("numberOfAyahs"),o.getString("revelationType"))}
@@ -148,6 +169,10 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
  var videoId by remember{mutableStateOf("")}
  var lang by remember{mutableStateOf("English")}
  var quranTranslation by remember{mutableStateOf("en.sahih")}
+ var recitations by remember{mutableStateOf(emptyList<Recitation>())}
+ var recitationsLoading by remember{mutableStateOf(false)}
+ var recitationsError by remember{mutableStateOf("")}
+ var selectedRecitation by remember{mutableStateOf<Recitation?>(null)}
  var quizIndex by remember{mutableIntStateOf(0)}
  var quizScore by remember{mutableIntStateOf(0)}
  var quizAnswer by remember{mutableIntStateOf(-1)}
@@ -159,6 +184,7 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
   quranTranslation=prefs.getString("quran_translation","en.sahih")?:"en.sahih"
  }
  LaunchedEffect(surahReloadKey){surahLoading=true;catalogueError="";try{surahs=getSurahs()}catch(e:Exception){catalogueError="Quran catalogue unavailable. Check your internet connection and tap Retry."}finally{surahLoading=false}}
+ LaunchedEffect(page){if(page=="Recitations"&&recitations.isEmpty()){recitationsLoading=true;recitationsError="";try{recitations=getRecitations();if(selectedRecitation==null)selectedRecitation=recitations.firstOrNull()}catch(e:Exception){recitationsError="Reciter catalogue unavailable. Check your internet connection and retry."}finally{recitationsLoading=false}}}
  fun openSurah(s:Surah){selected=s;ayahs=emptyList();page="Reader";ayahLoading=true;readerError=""}
  LaunchedEffect(selected,page,ayahReloadKey,quranTranslation){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(s.number,quranTranslation)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
  fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
@@ -181,7 +207,7 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
      "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,if(quranTranslation=="ur.jalandhry")"اردو ترجمہ" else "ENGLISH",favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
      "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
-     "Recitations"->RecitationsScreen(surahs,surahLoading,catalogueError,{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{surahReloadKey++})
+     "Recitations"->RecitationsScreen(surahs,recitations,selectedRecitation,recitationsLoading,recitationsError,{selectedRecitation=it},{recitation,s->openWeb(s.english+" · "+recitation.reciter,recitationUrl(recitation,s.number))},{recitations=emptyList();selectedRecitation=null})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen{t,u->openWeb(t,u)}
      "More"->MoreScreen{page=it}
@@ -226,15 +252,37 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
  LazyColumn(contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){items(data){a->Column(Modifier.fillMaxWidth().background(Deep,RoundedCornerShape(14.dp)).padding(15.dp)){Text("AYAH "+a.number,color=Gold,fontSize=10.sp);Text(a.arabic,color=Cream,fontSize=27.sp,lineHeight=48.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth().padding(vertical=10.dp),fontFamily=FontFamily.Serif);Divider(color=Border);Text(translationLabel,color=Gold,fontSize=10.sp,modifier=Modifier.padding(top=9.dp));Text(a.translation,color=Cream,fontSize=if(translationLabel=="اردو ترجمہ")16.sp else 14.sp,lineHeight=if(translationLabel=="اردو ترجمہ")29.sp else 23.sp,textAlign=if(translationLabel=="اردو ترجمہ")TextAlign.End else TextAlign.Start,modifier=Modifier.fillMaxWidth())}}}
  }
 }
-@Composable private fun RecitationsScreen(data:List<Surah>,loading:Boolean,error:String,play:(Surah)->Unit,retry:()->Unit){
+@Composable private fun RecitationsScreen(data:List<Surah>,recitations:List<Recitation>,selected:Recitation?,loading:Boolean,error:String,onSelect:(Recitation)->Unit,play:(Recitation,Surah)->Unit,retry:()->Unit){
+ var expanded by remember{mutableStateOf(false)}
+ var search by remember{mutableStateOf("")}
  Base{
-  Heading("LISTEN & REFLECT","Beautiful recitations")
-  Text("Listen to the full surah recitation by Mishary Rashid Alafasy.",color=Muted,fontSize=13.sp)
-  if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
+  Heading("LISTEN & REFLECT","Quran reciters")
+  Text("Choose a reciter and a Surah. The list is loaded from MP3Quran's public catalogue; only Surahs listed as available are shown.",color=Muted,fontSize=13.sp,lineHeight=19.sp)
+  Spacer(Modifier.height(12.dp))
+  Box{
+   OutlinedButton(onClick={expanded=true},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.outlinedButtonColors(contentColor=Gold)){
+    Text(selected?.label?:if(loading)"Loading reciters…" else "Select a reciter",modifier=Modifier.weight(1f),maxLines=2)
+    Icon(Icons.Default.ArrowDropDown,null)
+   }
+   DropdownMenu(expanded=expanded,onDismissRequest={expanded=false},modifier=Modifier.heightIn(max=420.dp).background(Deep)){
+    recitations.forEach{r->DropdownMenuItem(text={Column{Text(r.reciter,color=Cream);Text(r.style,color=Muted,fontSize=10.sp)}},onClick={onSelect(r);expanded=false})}
+   }
+  }
+  if(loading)LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=10.dp),color=Gold)
   if(error.isNotEmpty())Column(Modifier.fillMaxWidth().padding(vertical=12.dp)){Text(error,color=Gold);TextButton(onClick=retry){Text("Retry",color=Gold)}}
-  if(!loading&&error.isEmpty()&&data.isEmpty())Text("No recitations are available right now. Check your internet connection and try again.",color=Muted,modifier=Modifier.padding(top=14.dp))
-  LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=12.dp,bottom=20.dp)){
-   items(data){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).clickable{play(s)}.padding(14.dp),verticalAlignment=Alignment.CenterVertically){Icon(Icons.Default.PlayCircle,null,tint=Gold);Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=18.sp)}}
+  if(!loading&&error.isEmpty()&&recitations.isEmpty())Text("No reciters are available right now.",color=Muted,modifier=Modifier.padding(top=14.dp))
+  if(selected!=null){
+   Text("${selected.surahs.size} Surahs available · ${selected.style}",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=12.dp))
+   OutlinedTextField(search,{search=it},Modifier.fillMaxWidth().padding(top=8.dp),singleLine=true,placeholder={Text("Find a Surah",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},colors=fieldColors())
+   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=10.dp,bottom=22.dp)){
+    items(data.filter{selected.surahs.contains(it.number)&&(search.isBlank()||it.english.contains(search,true)||it.number.toString()==search)}){s->
+     Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).clickable{play(selected,s)}.padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+      Icon(Icons.Default.PlayCircle,null,tint=Gold)
+      Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=11.sp)}
+      Text(s.name,color=Gold,fontSize=18.sp)
+     }
+    }
+   }
   }
  }
 }
