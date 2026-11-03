@@ -186,7 +186,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
      "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},privacyOptionsRequired,onPrivacyOptions)
-     "VideoLibrary"->VideoLibraryScreen(videoCategory){playlistId->if(playlistId.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+playlistId+"&playsinline=1")}
+     "VideoLibrary"->VideoLibraryScreen(videoCategory){target->if(target.startsWith("https://"))openWeb(videoCategory,target)else if(target.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+target+"&playsinline=1")}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
      else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
     }
