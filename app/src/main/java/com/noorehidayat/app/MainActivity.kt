@@ -305,17 +305,21 @@ private data class CuratedPlaylist(val category:String,val playlistId:String)
 private val curatedPlaylists = emptyList<CuratedPlaylist>()
 
 @Composable private fun VideoLibraryScreen(category:String,play:(String)->Unit){
+ var searchText by remember(category){mutableStateOf("")}
  Base{
   Heading("NOOR-E-HIDAYAT VIDEO LIBRARY",category)
-  Text("Videos will play inside Noor-e-Hidayat using YouTube's official embedded player. No YouTube API key or our own video hosting is required.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+  Text("Search public YouTube results for this topic or a Mufti/lecturer. Results open on YouTube's own page. No API key, scraping, or invented video cards.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+  Spacer(Modifier.height(12.dp))
+  OutlinedTextField(value=searchText,onValueChange={searchText=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text("Search Mufti, scholar or topic",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},colors=fieldColors())
+  Button(onClick={play("https://www.youtube.com/results?search_query="+android.net.Uri.encode((category+" "+searchText).trim()))},modifier=Modifier.fillMaxWidth().padding(top=8.dp),enabled=searchText.isNotBlank(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text("  Search on YouTube")}
   Spacer(Modifier.height(16.dp))
   val playlist=curatedPlaylists.firstOrNull{it.category==category && it.playlistId.isNotBlank()}
   if(playlist==null){
    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
     Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
      Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
-     Text("Preparing this collection",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
-     Text("There is no verified, embeddable playlist published in this category yet. We will not show guessed IDs or unverified video links.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+     Text("No verified playlist yet",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
+     Text("Use the search above to find current public videos. We do not display guessed playlist IDs.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
     }
    }
   }else{
