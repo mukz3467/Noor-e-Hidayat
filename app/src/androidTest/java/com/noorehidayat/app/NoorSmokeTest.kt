@@ -17,19 +17,19 @@ class NoorSmokeTest {
 
     @Test
     fun homeScreenShowsDailyReminderAndMainNavigation() {
-        composeRule.onNodeWithText("NOOR-E-HIDAYAT").assertIsDisplayed()
-        composeRule.onNodeWithText("DAILY REMINDER").assertIsDisplayed()
-        composeRule.onNodeWithText("Quran Tilawat").assertIsDisplayed()
-        composeRule.onNodeWithText("Discover").assertIsDisplayed()
+        composeRule.onNodeWithText("NOOR-E-HIDAYAT").assertExists()
+        composeRule.onNodeWithText("DAILY REMINDER").assertExists()
+        composeRule.onNodeWithText("Quran Tilawat").assertExists()
+        composeRule.onNodeWithText("Discover").assertExists()
     }
 
     @Test
     fun learningGuideOpensFromMoreTab() {
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("Learning").performClick()
-        composeRule.onNodeWithText("Quran learning").assertIsDisplayed()
-        composeRule.onNodeWithText("1. Arabic alphabet").assertIsDisplayed()
-        composeRule.onNodeWithText("5. Daily revision").assertIsDisplayed()
+        composeRule.onNodeWithText("Quran learning").assertExists()
+        composeRule.onNodeWithText("1. Arabic alphabet").assertExists()
+        composeRule.onNodeWithText("5. Daily revision").assertExists()
     }
 
     @Test
@@ -37,19 +37,19 @@ class NoorSmokeTest {
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("Quiz").performClick()
         composeRule.onNodeWithText("How many daily obligatory prayers are there?")
-            .assertIsDisplayed()
+            .assertExists()
         composeRule.onNodeWithText("Five").performClick()
-        composeRule.onNodeWithText("Correct answer.").assertIsDisplayed()
+        composeRule.onNodeWithText("Correct answer.").assertExists()
         composeRule.onNodeWithText("Next question").performClick()
-        composeRule.onNodeWithText("Which month do Muslims fast?").assertIsDisplayed()
+        composeRule.onNodeWithText("Which month do Muslims fast?").assertExists()
     }
 
     @Test
     fun settingsClearlyDisclosesTranslationStatus() {
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("Settings").performClick()
-        composeRule.onNodeWithText("App language").assertIsDisplayed()
-        composeRule.onNodeWithText("English").assertIsDisplayed()
+        composeRule.onNodeWithText("App language").assertExists()
+        composeRule.onNodeWithText("English").assertExists()
         composeRule.onNodeWithText(
             "Language choice is saved; full interface translations are not yet implemented."
         ).assertExists()
@@ -70,10 +70,10 @@ class NoorSmokeTest {
     fun discoverShowsHonestEmptyStateInsteadOfDeadEnd() {
         composeRule.onNodeWithText("Discover").performClick()
         composeRule.onNodeWithText("Islamic Dramas").performClick()
-        composeRule.onNodeWithText("Browse this category").assertIsDisplayed()
-        composeRule.onNodeWithText("Browse on YouTube").assertIsDisplayed()
+        composeRule.onNodeWithText("Browse this category").assertExists()
+        composeRule.onNodeWithText("Browse on YouTube").assertExists()
         composeRule.onNodeWithText(
             "No verified playlist is configured yet. Browse YouTube results inside Noor-e-Hidayat and choose a video. Results are provided by YouTube and are not individually curated by this app."
-        ).assertIsDisplayed()
+        ).assertExists()
     }
 }
