@@ -31,9 +31,14 @@ class NoorSmokeTest {
     }
 
     @Test
-    fun discoverShowsHonestEmptyStateInsteadOfDeadEnd() {
+    fun discoverOpensVideoLibraryWithLanguageAndTopicFilters() {
         composeRule.onNodeWithText("Discover").performClick()
         composeRule.onNodeWithText("Islamic Dramas").performClick()
-        composeRule.onNodeWithText("Preparing this collection").assertIsDisplayed()
+        composeRule.onNodeWithText("LANGUAGE").assertIsDisplayed()
+        composeRule.onNodeWithText("Urdu").assertIsDisplayed()
+        composeRule.onNodeWithText("English").assertIsDisplayed()
+        composeRule.onNodeWithText("Arabic").assertIsDisplayed()
+        composeRule.onNodeWithText("POPULAR TOPICS").assertIsDisplayed()
+        composeRule.onNodeWithText("Tafseer").assertIsDisplayed()
     }
 }
