@@ -57,7 +57,7 @@ private val Cream=Color(0xFFFFF4DE)
 private val Muted=Color(0xFFB7C9BC)
 private val Border=Color(0xFF355B45)
 data class Surah(val number:Int,val name:String,val english:String,val meaning:String,val ayahs:Int,val type:String)
-data class Ayah(val number:Int,val arabic:String,val english:String,val urdu:String)
+data class Ayah(val number:Int,val arabic:String,val translation:String)
 
 class MainActivity:ComponentActivity(){
  private lateinit var consentInformation:ConsentInformation
@@ -120,9 +120,11 @@ private suspend fun getSurahs():List<Surah>{
  val j=JSONObject(api("surah"));require(j.optInt("code")==200);val a=j.getJSONArray("data")
  return (0 until a.length()).map{i->val o=a.getJSONObject(i);Surah(o.getInt("number"),o.getString("name"),o.getString("englishName"),o.getString("englishNameTranslation"),o.getInt("numberOfAyahs"),o.getString("revelationType"))}
 }
-private suspend fun getAyahs(n:Int):List<Ayah>{
- val j=JSONObject(api("surah/"+n+"/editions/quran-uthmani,en.sahih,ur.jalandhry"));require(j.optInt("code")==200);val d=j.getJSONArray("data");val ar=d.getJSONObject(0).getJSONArray("ayahs");val en=d.getJSONObject(1).getJSONArray("ayahs");val ur=d.getJSONObject(2).getJSONArray("ayahs")
- return (0 until ar.length()).map{i->Ayah(ar.getJSONObject(i).getInt("numberInSurah"),ar.getJSONObject(i).getString("text"),en.getJSONObject(i).getString("text"),ur.getJSONObject(i).getString("text"))}
+private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
+ val safeEdition=if(translationEdition=="ur.jalandhry")"ur.jalandhry" else "en.sahih"
+ val j=JSONObject(api("surah/"+n+"/editions/quran-uthmani,"+safeEdition));require(j.optInt("code")==200);val d=j.getJSONArray("data");require(d.length()>=2);val ar=d.getJSONObject(0).getJSONArray("ayahs");val tr=d.getJSONObject(1).getJSONArray("ayahs")
+ require(ar.length()==tr.length())
+ return (0 until ar.length()).map{i->Ayah(ar.getJSONObject(i).getInt("numberInSurah"),ar.getJSONObject(i).getString("text"),tr.getJSONObject(i).getString("text"))}
 }
 
 @Composable private fun NoorApp(adsAllowed:Boolean,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
@@ -145,6 +147,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var videoParentPage by remember{mutableStateOf("Lectures")}
  var videoId by remember{mutableStateOf("")}
  var lang by remember{mutableStateOf("English")}
+ var quranTranslation by remember{mutableStateOf("en.sahih")}
  var quizIndex by remember{mutableIntStateOf(0)}
  var quizScore by remember{mutableIntStateOf(0)}
  var quizAnswer by remember{mutableIntStateOf(-1)}
@@ -153,10 +156,11 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  LaunchedEffect(Unit){
   favs=prefs.getStringSet("favs",emptySet())?.mapNotNull{it.toIntOrNull()}?.toSet()?:emptySet()
   lang=prefs.getString("lang","English")?:"English"
+  quranTranslation=prefs.getString("quran_translation","en.sahih")?:"en.sahih"
  }
  LaunchedEffect(surahReloadKey){surahLoading=true;catalogueError="";try{surahs=getSurahs()}catch(e:Exception){catalogueError="Quran catalogue unavailable. Check your internet connection and tap Retry."}finally{surahLoading=false}}
  fun openSurah(s:Surah){selected=s;ayahs=emptyList();page="Reader";ayahLoading=true;readerError=""}
- LaunchedEffect(selected,page,ayahReloadKey){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(s.number)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
+ LaunchedEffect(selected,page,ayahReloadKey,quranTranslation){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(s.number,quranTranslation)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
  fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
  BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
@@ -175,7 +179,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
-     "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
+     "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,if(quranTranslation=="ur.jalandhry")"اردو ترجمہ" else "ENGLISH",favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
      "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
      "Recitations"->RecitationsScreen(surahs,surahLoading,catalogueError,{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{surahReloadKey++})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
@@ -185,7 +189,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizIndex<quizData.size&&quizAnswer==-1){if(a==quizData[quizIndex].third)quizScore++;quizAnswer=a}},{if(quizIndex>=quizData.size){quizIndex=0;quizScore=0}else{quizIndex++};quizAnswer=-1})
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
-     "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},privacyOptionsRequired,onPrivacyOptions)
+     "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},quranTranslation,{edition->quranTranslation=edition;prefs.edit().putString("quran_translation",edition).apply();ayahReloadKey++},privacyOptionsRequired,onPrivacyOptions)
      "VideoLibrary"->VideoLibraryScreen(videoCategory){target->if(target.startsWith("https://"))openWeb(videoCategory,target)else if(target.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+target+"&playsinline=1")}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
      else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
@@ -216,10 +220,10 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
  LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=10.dp,bottom=22.dp)){items(data.filter{search.isBlank()||it.english.contains(search,true)||it.meaning.contains(search,true)||it.number.toString()==search||it.name.contains(search)}){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(14.dp)).clickable{onOpen(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(40.dp).background(Emerald,RoundedCornerShape(10.dp)),contentAlignment=Alignment.Center){Text(s.number.toString(),color=Gold,fontWeight=FontWeight.Bold)};Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream,fontWeight=FontWeight.SemiBold);Text(s.meaning+" · "+s.ayahs+" Ayahs · "+s.type,color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=19.sp)}}}
  }
 }
-@Composable private fun ReaderScreen(s:Surah?,data:List<Ayah>,loading:Boolean,error:String,isFav:Boolean,toggleFav:(Surah)->Unit,audio:(Surah)->Unit,retry:()->Unit){
+@Composable private fun ReaderScreen(s:Surah?,data:List<Ayah>,loading:Boolean,error:String,translationLabel:String,isFav:Boolean,toggleFav:(Surah)->Unit,audio:(Surah)->Unit,retry:()->Unit){
  Base{if(s==null)return@Base;Heading("SURAH "+s.number+" · "+s.type,s.english);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=12.sp);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={toggleFav(s)}){Icon(if(isFav)Icons.Default.Favorite else Icons.Default.FavoriteBorder,null,tint=Gold);Text(if(isFav)" Saved" else " Save",color=Gold)};Spacer(Modifier.weight(1f));Button({audio(s)},Modifier.padding(vertical=10.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("  Listen · Mishary Alafasy")}}
  if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold);if(error.isNotEmpty())Column(Modifier.fillMaxWidth().padding(10.dp)){Text(error,color=Gold);TextButton(onClick=retry){Text("Retry",color=Gold)}}
- LazyColumn(contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){items(data){a->Column(Modifier.fillMaxWidth().background(Deep,RoundedCornerShape(14.dp)).padding(15.dp)){Text("AYAH "+a.number,color=Gold,fontSize=10.sp);Text(a.arabic,color=Cream,fontSize=27.sp,lineHeight=48.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth().padding(vertical=10.dp),fontFamily=FontFamily.Serif);Divider(color=Border);Text("ENGLISH",color=Gold,fontSize=9.sp,modifier=Modifier.padding(top=9.dp));Text(a.english,color=Cream,fontSize=14.sp,lineHeight=23.sp);Text("اردو ترجمہ",color=Gold,fontSize=11.sp,modifier=Modifier.padding(top=8.dp));Text(a.urdu,color=Cream,fontSize=16.sp,lineHeight=29.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth())}}}
+ LazyColumn(contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){items(data){a->Column(Modifier.fillMaxWidth().background(Deep,RoundedCornerShape(14.dp)).padding(15.dp)){Text("AYAH "+a.number,color=Gold,fontSize=10.sp);Text(a.arabic,color=Cream,fontSize=27.sp,lineHeight=48.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth().padding(vertical=10.dp),fontFamily=FontFamily.Serif);Divider(color=Border);Text(translationLabel,color=Gold,fontSize=10.sp,modifier=Modifier.padding(top=9.dp));Text(a.translation,color=Cream,fontSize=if(translationLabel=="اردو ترجمہ")16.sp else 14.sp,lineHeight=if(translationLabel=="اردو ترجمہ")29.sp else 23.sp,textAlign=if(translationLabel=="اردو ترجمہ")TextAlign.End else TextAlign.Start,modifier=Modifier.fillMaxWidth())}}}
  }
 }
 @Composable private fun RecitationsScreen(data:List<Surah>,loading:Boolean,error:String,play:(Surah)->Unit,retry:()->Unit){
@@ -358,7 +362,7 @@ private data class Q(val prompt:String,val options:List<String>,val third:Int)
 private val quizData=listOf(Q("How many daily obligatory prayers are there?",listOf("Three","Five","Seven"),1),Q("Which month do Muslims fast?",listOf("Ramadan","Shawwal","Muharram"),0),Q("Which direction do Muslims face in salah?",listOf("Jerusalem","The Kaaba","Madinah"),1),Q("What is the first month of the Islamic calendar?",listOf("Ramadan","Muharram","Rajab"),1),Q("What is the holy book of Islam?",listOf("Quran","Torah","Psalms"),0))
 @Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].third)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].third],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
 @Composable private fun HistoryScreen(history:List<String>){Base{Heading("YOUR ACTIVITY","Watch history");if(history.isEmpty())Text("No recently played items in this session.",color=Muted);history.forEach{Text(it,color=Cream,modifier=Modifier.fillMaxWidth().padding(12.dp).background(Panel,RoundedCornerShape(10.dp)).padding(10.dp))}}}
-@Composable private fun SettingsScreen(lang:String,change:(String)->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){Base{Heading("PREFERENCES","Settings");Text("App language",color=Gold);listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Text("Language choice is saved; full interface translations are not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp));if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Privacy options")}}}}
+@Composable private fun SettingsScreen(lang:String,change:(String)->Unit,translationEdition:String,changeTranslation:(String)->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){Base{Heading("PREFERENCES","Settings");Text("App language preference",color=Gold);listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Spacer(Modifier.height(18.dp));Text("Quran translation",color=Gold);listOf("en.sahih" to "English · Sahih International","ur.jalandhry" to "اردو · فتح محمد جالندھری").forEach{(edition,label)->Row(Modifier.fillMaxWidth().clickable{changeTranslation(edition)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(label,color=Cream,modifier=Modifier.weight(1f));if(translationEdition==edition)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Text("The selected translation is saved and used in the Quran reader. Full interface localization is not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp));if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Privacy options")}}}}
 @SuppressLint("SetJavaScriptEnabled")
 @Composable private fun MediaScreen(title:String,url:String,videoId:String){
  val ctx=LocalContext.current
