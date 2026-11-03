@@ -216,9 +216,9 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
      "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},quranTranslation,{edition->quranTranslation=edition;prefs.edit().putString("quran_translation",edition).apply();ayahReloadKey++},privacyOptionsRequired,onPrivacyOptions)
-     "VideoLibrary"->VideoLibraryScreen(videoCategory){target->if(target.startsWith("https://"))openWeb(videoCategory,target)else if(target.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+target+"&playsinline=1")}
+     "VideoLibrary"->VideoLibraryScreen(videoCategory,search){target->if(target.startsWith("https://"))openWeb(videoCategory,target)else if(target.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+target+"&playsinline=1")}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
-     else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
+     else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";search=query;page="VideoLibrary"})
     }
    }
   }
@@ -376,8 +376,8 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
 private data class CuratedPlaylist(val category:String,val playlistId:String)
 private val curatedPlaylists = emptyList<CuratedPlaylist>()
 
-@Composable private fun VideoLibraryScreen(category:String,play:(String)->Unit){
- var searchText by remember(category){mutableStateOf(if(category=="Islamic Videos")"Islamic reminders" else "")}
+@Composable private fun VideoLibraryScreen(category:String,initialQuery:String,play:(String)->Unit){
+ var searchText by remember(category){mutableStateOf(initialQuery.ifBlank{if(category=="Islamic Videos")"Islamic reminders" else ""})}
  var language by remember(category){mutableStateOf("All")}
  val languages=listOf("All","Urdu","English","Arabic")
  val topics=listOf("Quran recitation","Tafseer","Seerah","Hadith","Islamic reminders","Stories of Prophets","Islamic lectures","Kids & Family")
