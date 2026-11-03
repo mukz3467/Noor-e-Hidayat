@@ -141,6 +141,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
  var search by remember{mutableStateOf("")}
  var mediaTitle by remember{mutableStateOf("")}
  var mediaUrl by remember{mutableStateOf("")}
+ var mediaParentPage by remember{mutableStateOf("Home")}
  var videoCategory by remember{mutableStateOf("Islamic Lectures")}
  var videoParentPage by remember{mutableStateOf("Lectures")}
  var videoId by remember{mutableStateOf("")}
@@ -155,10 +156,10 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
   lang=prefs.getString("lang","English")?:"English"
  }
  LaunchedEffect(surahReloadKey){surahLoading=true;catalogueError="";try{surahs=getSurahs()}catch(e:Exception){catalogueError="Quran catalogue unavailable. Check your internet connection and tap Retry."}finally{surahLoading=false}}
- fun openSurah(s:Surah){selected=s;ayahs=emptyList();page="Reader";ayahLoading=true;readerError=""}
+ fun openSurah(s:Surah){selected=s;ayahs=emptyList();page="Reader";ayahLoading=true;readerError="";history=(listOf("Surah · "+s.english)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
  LaunchedEffect(selected,page,ayahReloadKey){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(s.number)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
- fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
- BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
+ fun openWeb(title:String,url:String){mediaParentPage=page;mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
+ BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Media"->mediaParentPage;"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Media"))Column { NavigationBar(containerColor=Deep){
@@ -171,7 +172,7 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
-    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
+    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->mediaParentPage;"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,contentDescription="Back",tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
@@ -184,9 +185,9 @@ private suspend fun getAyahs(n:Int):List<Ayah>{
      "Learning"->LearningScreen()
      "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizIndex<quizData.size&&quizAnswer==-1){if(a==quizData[quizIndex].third)quizScore++;quizAnswer=a}},{if(quizIndex>=quizData.size){quizIndex=0;quizScore=0}else{quizIndex++};quizAnswer=-1})
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
-     "History"->HistoryScreen(history)
+     "History"->HistoryScreen(history){history=emptyList();prefs.edit().putString("history","").apply()}
      "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},privacyOptionsRequired,onPrivacyOptions)
-     "VideoLibrary"->VideoLibraryScreen(videoCategory){playlistId->if(playlistId.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+playlistId+"&playsinline=1")}
+     "VideoLibrary"->VideoLibraryScreen(videoCategory){targetUrl->openWeb(videoCategory,targetUrl)}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
      else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
     }
@@ -236,8 +237,7 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
 }
 @Composable private fun DiscoverScreen(open:(String)->Unit){
  val categories=listOf(
-  "Quran Recitations" to "Full-surah audio and Quran listening",
-  "Islamic Lectures" to "Talks on faith, character and daily life",
+  "Quran Recitations" to "Full-surah audio and Quran listening",  "Islamic Lectures" to "Talks on faith, character and daily life",
   "Islamic Dramas" to "Faith-inspired stories and family viewing",
   "Islamic Documentaries" to "History, places and educational films",
   "Seerah of Prophet Muhammad ﷺ" to "Learn about the life of the Prophet",
@@ -304,22 +304,23 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
 private data class CuratedPlaylist(val category:String,val playlistId:String)
 private val curatedPlaylists = emptyList<CuratedPlaylist>()
 
-@Composable private fun VideoLibraryScreen(category:String,play:(String)->Unit){
+@Composable private fun VideoLibraryScreen(category:String,open:(String)->Unit){
  Base{
   Heading("NOOR-E-HIDAYAT VIDEO LIBRARY",category)
-  Text("Videos will play inside Noor-e-Hidayat using YouTube's official embedded player. No YouTube API key or our own video hosting is required.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+  Text("Browse YouTube content inside Noor-e-Hidayat. Verified playlists use YouTube's embedded player; other categories open YouTube search results in the in-app browser.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
   Spacer(Modifier.height(16.dp))
   val playlist=curatedPlaylists.firstOrNull{it.category==category && it.playlistId.isNotBlank()}
   if(playlist==null){
    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
     Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
      Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
-     Text("Preparing this collection",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
-     Text("There is no verified, embeddable playlist published in this category yet. We will not show guessed IDs or unverified video links.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+     Text("Browse this category",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
+     Text("No verified playlist is configured yet. Browse YouTube results inside Noor-e-Hidayat and choose a video. Results are provided by YouTube and are not individually curated by this app.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+     Button(onClick={open("https://www.youtube.com/results?search_query="+android.net.Uri.encode("Islamic "+category))},modifier=Modifier.fillMaxWidth().padding(top=12.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text("Browse on YouTube")}
     }
    }
   }else{
-   Button(onClick={play(playlist.playlistId)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("Play collection")}
+   Button(onClick={open("https://www.youtube-nocookie.com/embed/videoseries?list="+playlist.playlistId+"&playsinline=1")},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("Play collection")}
   }
  }
 }
@@ -353,10 +354,9 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
 private data class Q(val prompt:String,val options:List<String>,val third:Int)
 private val quizData=listOf(Q("How many daily obligatory prayers are there?",listOf("Three","Five","Seven"),1),Q("Which month do Muslims fast?",listOf("Ramadan","Shawwal","Muharram"),0),Q("Which direction do Muslims face in salah?",listOf("Jerusalem","The Kaaba","Madinah"),1),Q("What is the first month of the Islamic calendar?",listOf("Ramadan","Muharram","Rajab"),1),Q("What is the holy book of Islam?",listOf("Quran","Torah","Psalms"),0))
 @Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].third)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].third],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
-@Composable private fun HistoryScreen(history:List<String>){Base{Heading("YOUR ACTIVITY","Watch history");if(history.isEmpty())Text("No recently played items in this session.",color=Muted);history.forEach{Text(it,color=Cream,modifier=Modifier.fillMaxWidth().padding(12.dp).background(Panel,RoundedCornerShape(10.dp)).padding(10.dp))}}}
+@Composable private fun HistoryScreen(history:List<String>,clear:()->Unit){Base{Heading("YOUR ACTIVITY","Watch history");if(history.isNotEmpty()){TextButton(onClick=clear){Text("Clear history",color=Gold)}};if(history.isEmpty())Text("No recently opened items yet.",color=Muted);history.forEach{Text(it,color=Cream,modifier=Modifier.fillMaxWidth().padding(12.dp).background(Panel,RoundedCornerShape(10.dp)).padding(10.dp))}}}
 @Composable private fun SettingsScreen(lang:String,change:(String)->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){Base{Heading("PREFERENCES","Settings");Text("App language",color=Gold);listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)};Text("Language choice is saved; full interface translations are not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp));if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Privacy options")}}}}
-@SuppressLint("SetJavaScriptEnabled")
-@Composable private fun MediaScreen(title:String,url:String,videoId:String){
+@SuppressLint("SetJavaScriptEnabled")@Composable private fun MediaScreen(title:String,url:String,videoId:String){
  val ctx=LocalContext.current
  val audio=url.endsWith(".mp3",ignoreCase=true)
  var webLoading by remember(url){mutableStateOf(true)}
@@ -415,8 +415,8 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
         }
        }
        val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
-       if(target.contains("youtube",true)||target.contains("youtu.be",true)){
-        val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"></head><body style="margin:0;background:#000"><iframe src="$target" title="YouTube video player" width="100%" height="100%" style="position:absolute;inset:0;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
+       if((target.contains("youtube",true)||target.contains("youtu.be",true)) && !target.contains("/results?",true)){
+        val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><style>html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style></head><body><iframe src="$target" title="YouTube video player" width="100%" height="100%" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
         tag=target
         loadDataWithBaseURL("https://${c.packageName}/",html,"text/html","UTF-8",null)
        }else{
@@ -429,8 +429,8 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
       val target=if(videoId.isNotBlank())"https://www.youtube-nocookie.com/embed/"+videoId+"?playsinline=1&rel=0" else url
       if(webView.tag!=target){
        webView.tag=target
-       if(target.contains("youtube",true)||target.contains("youtu.be",true)){
-        val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"></head><body style="margin:0;background:#000"><iframe src="$target" title="YouTube video player" width="100%" height="100%" style="position:absolute;inset:0;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
+       if((target.contains("youtube",true)||target.contains("youtu.be",true)) && !target.contains("/results?",true)){
+        val html="""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><style>html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}</style></head><body><iframe src="$target" title="YouTube video player" width="100%" height="100%" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></body></html>"""
         webView.loadDataWithBaseURL("https://${webView.context.packageName}/",html,"text/html","UTF-8",null)
        }else webView.loadUrl(target)
       }
