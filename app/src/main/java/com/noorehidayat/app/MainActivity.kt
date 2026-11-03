@@ -203,7 +203,7 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
    Column(Modifier.fillMaxSize().padding(pad)){
     if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
-     "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"})
+     "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";mediaTitle="";mediaUrl="";page="VideoLibrary";search=query})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
      "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,if(quranTranslation=="ur.jalandhry")"اردو ترجمہ" else "ENGLISH",favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++})
      "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
@@ -229,14 +229,34 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
 @Composable private fun Base(content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().background(Emerald).padding(horizontal=18.dp),content=content)}
 @Composable private fun Heading(kicker:String,title:String){Text(kicker.uppercase(),color=Gold,fontSize=10.sp,letterSpacing=2.sp);Text(title,color=Cream,fontSize=27.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=5.dp,bottom=14.dp))}
 @Composable private fun Tile(title:String,sub:String,symbol:String,click:()->Unit){Card(Modifier.clickable{click()},shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){Column(Modifier.fillMaxWidth().padding(15.dp)){Text(symbol,color=Gold,fontSize=25.sp);Spacer(Modifier.height(10.dp));Text(title,color=Cream,fontWeight=FontWeight.SemiBold);Text(sub,color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=4.dp))}}}
-@Composable private fun HomeScreen(q:()->Unit,r:()->Unit,l:()->Unit,live:()->Unit,learn:()->Unit,quiz:()->Unit,more:()->Unit){
- Base{Column(Modifier.fillMaxWidth().padding(top=18.dp,bottom=18.dp),horizontalAlignment=Alignment.CenterHorizontally){Text("☾",fontSize=36.sp,color=Gold);Text("NOOR-E-HIDAYAT",fontSize=23.sp,fontWeight=FontWeight.Bold,color=Gold,letterSpacing=2.sp);Text("GUIDANCE · KNOWLEDGE · PEACE",fontSize=9.sp,color=Muted,letterSpacing=2.sp)}
- Heading("ASSALAMU ALAIKUM","Find peace in remembrance")
- Card(colors=CardDefaults.cardColors(containerColor=Panel),shape=RoundedCornerShape(18.dp),border=BorderStroke(1.dp,Gold.copy(alpha=.4f))){Column(Modifier.fillMaxWidth().padding(18.dp)){Text("DAILY REMINDER",color=Gold,fontSize=10.sp,letterSpacing=2.sp);Text("“Indeed, in the remembrance of Allah do hearts find peace.”",color=Cream,fontSize=18.sp,fontFamily=FontFamily.Serif,textAlign=TextAlign.Center,modifier=Modifier.padding(vertical=12.dp));Text("Quran · 13:28",color=Muted,fontSize=11.sp,modifier=Modifier.align(Alignment.End))}}
- Spacer(Modifier.height(18.dp));Heading("EXPLORE","Your spiritual space")
- androidx.compose.foundation.lazy.grid.LazyVerticalGrid(columns=androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),modifier=Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(10.dp),verticalArrangement=Arrangement.spacedBy(10.dp),contentPadding=PaddingValues(bottom=18.dp)){
-  item{Tile("Quran Tilawat","114 Surahs","۞",q)};item{Tile("Recitations","Listen & reflect","♫",r)};item{Tile("Islamic Lectures","Knowledge & guidance","◉",l)};item{Tile("Makkah & Madinah","Live broadcasts","🕋",live)};item{Tile("Quran Learning","Build your skills","✧",learn)};item{Tile("Islamic Quiz","Test knowledge","❖",quiz)};item{Tile("More Features","Saved content","▦",more)}
- }
+@Composable private fun HomeScreen(q:()->Unit,r:()->Unit,l:()->Unit,live:()->Unit,learn:()->Unit,quiz:()->Unit,more:()->Unit,searchVideos:(String)->Unit){
+ var homeQuery by remember{mutableStateOf("")}
+ Base{
+  Column(Modifier.fillMaxWidth().padding(top=14.dp,bottom=12.dp),horizontalAlignment=Alignment.CenterHorizontally){
+   Text("☾",fontSize=38.sp,color=Gold)
+   Text("NOOR-E-HIDAYAT",fontSize=25.sp,fontWeight=FontWeight.Bold,color=Gold,letterSpacing=2.sp)
+   Text("LEARN · WATCH · PEACE",fontSize=10.sp,color=Muted,letterSpacing=2.sp)
+  }
+  OutlinedTextField(value=homeQuery,onValueChange={homeQuery=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text("Search Quran, Surah or Islamic videos…",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},trailingIcon={IconButton(onClick={searchVideos(homeQuery)}){Icon(Icons.Default.ArrowForward,null,tint=Gold)}},colors=fieldColors())
+  Spacer(Modifier.height(14.dp))
+  androidx.compose.foundation.lazy.grid.LazyVerticalGrid(columns=androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),modifier=Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(9.dp),verticalArrangement=Arrangement.spacedBy(9.dp),contentPadding=PaddingValues(bottom=12.dp)){
+   item{Tile("Quran Tilawat","With translation","📖",q)}
+   item{Tile("Beautiful Recitations","Listen & reflect","♫",r)}
+   item{Tile("Islamic Lectures","Urdu · English","◉",l)}
+   item{Tile("Makkah & Madinah","Live streams","🕋",live)}
+   item{Tile("Daily Islamic Videos","Watch & learn","▶", {searchVideos("Islamic reminders")})}
+   item{Tile("More Categories","Explore topics","▦",more)}
+  }
+  Card(Modifier.fillMaxWidth().padding(bottom=10.dp),shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Gold.copy(alpha=.35f))){
+   Row(Modifier.fillMaxWidth().padding(13.dp),verticalAlignment=Alignment.CenterVertically){
+    Text("🕌",fontSize=30.sp)
+    Column(Modifier.weight(1f).padding(start=12.dp)){
+     Text("DAILY REMINDER",color=Gold,fontSize=10.sp,letterSpacing=1.sp)
+     Text("Indeed, in the remembrance of Allah do hearts find peace.",color=Cream,fontSize=13.sp,lineHeight=18.sp)
+     Text("Quran · 13:28",color=Muted,fontSize=10.sp)
+    }
+   }
+  }
  }
 }
 @Composable private fun QuranScreen(data:List<Surah>,loading:Boolean,error:String,search:String,onSearch:(String)->Unit,onOpen:(Surah)->Unit,retry:()->Unit){
@@ -357,25 +377,35 @@ private data class CuratedPlaylist(val category:String,val playlistId:String)
 private val curatedPlaylists = emptyList<CuratedPlaylist>()
 
 @Composable private fun VideoLibraryScreen(category:String,play:(String)->Unit){
- var searchText by remember(category){mutableStateOf("")}
+ var searchText by remember(category){mutableStateOf(if(category=="Islamic Videos")"Islamic reminders" else "")}
+ var language by remember(category){mutableStateOf("All")}
+ val languages=listOf("All","Urdu","English","Arabic")
+ val topics=listOf("Quran recitation","Tafseer","Seerah","Hadith","Islamic reminders","Stories of Prophets","Islamic lectures","Kids & Family")
+ fun runSearch(term:String){
+  val query=listOf(category.takeUnless{it=="Islamic Videos"}?: "",term,language.takeUnless{it=="All"}?: "").filter{it.isNotBlank()}.joinToString(" ")
+  play("https://www.youtube.com/results?search_query="+android.net.Uri.encode(query))
+ }
  Base{
-  Heading("NOOR-E-HIDAYAT VIDEO LIBRARY",category)
-  Text("Search public YouTube results for this topic or a Mufti/lecturer. Results open on YouTube's own page. No API key, scraping, or invented video cards.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+  Heading("DISCOVER · YOUTUBE",category)
+  Text("Choose a language and topic. Noor-e-Hidayat organizes the search; video playback and availability remain provided by YouTube.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
   Spacer(Modifier.height(12.dp))
-  OutlinedTextField(value=searchText,onValueChange={searchText=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text("Search Mufti, scholar or topic",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},colors=fieldColors())
-  Button(onClick={play("https://www.youtube.com/results?search_query="+android.net.Uri.encode((category+" "+searchText).trim()))},modifier=Modifier.fillMaxWidth().padding(top=8.dp),enabled=searchText.isNotBlank(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text("  Search on YouTube")}
+  Text("LANGUAGE",color=Gold,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
+  Row(horizontalArrangement=Arrangement.spacedBy(7.dp),modifier=Modifier.fillMaxWidth()){
+   languages.forEach{item->FilterChip(selected=language==item,onClick={language=item},label={Text(item,fontSize=11.sp)},colors=FilterChipDefaults.filterChipColors(selectedContainerColor=Gold,selectedLabelColor=Emerald,containerColor=Panel,labelColor=Cream))}
+  }
+  Spacer(Modifier.height(12.dp))
+  OutlinedTextField(value=searchText,onValueChange={searchText=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text("Search scholar, Surah or topic",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},colors=fieldColors())
+  Button(onClick={runSearch(searchText)},modifier=Modifier.fillMaxWidth().padding(top=8.dp),enabled=searchText.isNotBlank(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.Search,null);Text("  Find videos")}
   Spacer(Modifier.height(16.dp))
-  val playlist=curatedPlaylists.firstOrNull{it.category==category && it.playlistId.isNotBlank()}
-  if(playlist==null){
-   Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
-    Column(Modifier.fillMaxWidth().padding(18.dp),horizontalAlignment=Alignment.CenterHorizontally){
-     Icon(Icons.Default.VideoLibrary,null,tint=Gold,modifier=Modifier.size(38.dp))
-     Text("No verified playlist yet",color=Cream,fontSize=17.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(top=10.dp))
-     Text("Use the search above to find current public videos. We do not display guessed playlist IDs.",color=Muted,fontSize=12.sp,lineHeight=18.sp,textAlign=TextAlign.Center,modifier=Modifier.padding(top=7.dp))
+  Text("POPULAR TOPICS",color=Gold,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
+  LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=9.dp,bottom=22.dp)){
+   items(topics){topic->
+    Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).clickable{runSearch(topic)}.padding(14.dp),verticalAlignment=Alignment.CenterVertically){
+     Icon(Icons.Default.PlayCircle,null,tint=Gold)
+     Text(topic,color=Cream,fontWeight=FontWeight.Medium,modifier=Modifier.weight(1f).padding(start=12.dp))
+     Icon(Icons.Default.ChevronRight,null,tint=Muted)
     }
    }
-  }else{
-   Button(onClick={play(playlist.playlistId)},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("Play collection")}
   }
  }
 }
