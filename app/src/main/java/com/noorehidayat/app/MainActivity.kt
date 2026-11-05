@@ -274,7 +274,7 @@ internal fun resolveBackPage(page:String,mediaParentPage:String,videoParentPage:
      "Tafseer"->TafseerScreen(tafseerSurah)
      "Prayer Times"->PrayerTimesScreen()
      "Offline Audio"->OfflineAudioScreen(surahs,{surah->openWeb(surah.english+" · Offline audio",offlineSurahAudioUri(ctx,surah.number))},{surah->deleteOfflineSurah(ctx,surah.number)})
-     "Discover"->DiscoverScreen(lang){category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
+     "Discover"->DiscoverScreen(lang){category->if(category=="External Quran video courses")openWeb("Quran video courses","https://www.rasulullah.org/en/quran")else{videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}}
      "Recitations"->RecitationsScreen(surahs,recitations,selectedRecitation,recitationsLoading,recitationsError,{selectedRecitation=it},{recitation,s->openWeb(s.english+" · "+recitation.reciter,recitationUrl(recitation,s.number))},{recitations=emptyList();selectedRecitation=null})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
      "Live"->LiveScreen(lang){t,u->openWeb(t,u)}
@@ -461,7 +461,8 @@ internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
   "Islamic Documentaries" to "History, places and educational films",
   "Seerah of Prophet Muhammad ﷺ" to "Learn about the life of the Prophet",
   "Stories of the Prophets" to "Lessons from the Prophets",
-  "Kids & Family" to "Family-friendly Islamic learning"
+  "Kids & Family" to "Family-friendly Islamic learning",
+  "External Quran video courses" to "A resource page listing teacher-published video courses and playlists"
  )
  Base{
   Heading(localized(lang,"DISCOVER","دریافت کریں"),localized(lang,"Islamic content","اسلامی مواد"))
@@ -473,8 +474,8 @@ internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
      Row(Modifier.fillMaxWidth().padding(15.dp),verticalAlignment=Alignment.CenterVertically){
       Icon(Icons.Default.PlayCircle,null,tint=Gold,modifier=Modifier.size(30.dp))
       Column(Modifier.weight(1f).padding(start=12.dp)){
-       Text(name,color=Cream,fontWeight=FontWeight.SemiBold,fontSize=14.sp)
-       Text(description,color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=4.dp))
+       Text(if(lang=="اردو")when(name){"Quran Recitations"->"قرآن کی تلاوتیں";"Islamic Lectures"->"اسلامی بیانات";"Islamic Dramas"->"اسلامی ڈرامے";"Islamic Documentaries"->"اسلامی دستاویزی فلمیں";"Seerah of Prophet Muhammad ﷺ"->"سیرت النبی ﷺ";"Stories of the Prophets"->"انبیاء کے واقعات";"Kids & Family"->"بچوں اور خاندان کے لیے";else->"قرآن کے ویڈیو کورسز"}else name,color=Cream,fontWeight=FontWeight.SemiBold,fontSize=14.sp)
+       Text(if(lang=="اردو"&&name=="External Quran video courses")"اساتذہ کے شائع کردہ ویڈیو کورسز اور پلے لسٹس کا بیرونی صفحہ" else description,color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=4.dp))
       }
       Icon(Icons.Default.ChevronRight,null,tint=Gold)
      }
@@ -557,7 +558,14 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
  }
 }
 
-@Composable private fun LiveScreen(lang:String,open:(String,String)->Unit){Base{Heading(localized(lang,"LIVE BROADCASTS","براہ راست نشریات"),localized(lang,"Makkah & Madinah","مکہ اور مدینہ"));Text("Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.",color=Muted,fontSize=13.sp);Spacer(Modifier.height(18.dp));Tile("Masjid al-Haram · Makkah","Official Saudi broadcaster","🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")};Spacer(Modifier.height(12.dp));Tile("Al-Masjid an-Nabawi · Madinah","Official Saudi broadcaster","☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}}}
+@Composable private fun LiveScreen(lang:String,open:(String,String)->Unit){Base{
+ Heading(localized(lang,"LIVE BROADCASTS","براہ راست نشریات"),localized(lang,"Makkah & Madinah","مکہ اور مدینہ"))
+ Text(localized(lang,"Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.","سرکاری نشریاتی صفحات ایپ کے اندر کھلیں گے۔ نشریات کی دستیابی متعلقہ ادارے کے اختیار میں ہے۔"),color=Muted,fontSize=13.sp)
+ Spacer(Modifier.height(18.dp))
+ Tile(localized(lang,"Masjid al-Haram · Makkah","مسجد الحرام · مکہ"),localized(lang,"Saudi Quran TV broadcaster page","سعودی قرآن ٹی وی کا نشریاتی صفحہ"),"🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")}
+ Spacer(Modifier.height(12.dp))
+ Tile(localized(lang,"Al-Masjid an-Nabawi · Madinah","مسجد نبوی ﷺ · مدینہ"),localized(lang,"Saudi Sunnah TV broadcaster page","سعودی سنت ٹی وی کا نشریاتی صفحہ"),"☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}
+}}
 @Composable private fun MoreScreen(lang:String,go:(String)->Unit){
  Base{
   Heading(localized(lang,"YOUR SPACE","آپ کی جگہ"),localized(lang,"More features","مزید سہولیات"))

@@ -20,6 +20,13 @@ class NoorSmokeTest {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
+    fun urduLocalizationProvidesCoreNavigationLabels() {
+        assertTrue(localized("اردو", "Home", "صفحہ اول") == "صفحہ اول")
+        assertTrue(localized("اردو", "Quran", "قرآن") == "قرآن")
+        assertTrue(localized("English", "Home", "صفحہ اول") == "Home")
+    }
+
+    @Test
     fun backNavigationReturnsToPreviousFeature() {
         assertTrue(resolveBackPage("Media", "Offline Audio", "Discover") == "Offline Audio")
         assertTrue(resolveBackPage("VideoLibrary", "Home", "Lectures") == "Lectures")
