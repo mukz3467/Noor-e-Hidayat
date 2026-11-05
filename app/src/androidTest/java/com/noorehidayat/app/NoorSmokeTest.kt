@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.location.Location
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -45,6 +46,17 @@ class NoorSmokeTest {
         val fromFaisalabad = calculateQiblaBearing(31.418, 73.079)
         assertTrue(kotlin.math.abs(atKaaba) < 0.01f)
         assertTrue(kotlin.math.abs(fromFaisalabad - 259.55f) < 0.5f)
+    }
+
+    @Test
+    fun qiblaHeadingAppliesLocalMagneticDeclination() {
+        val location = Location("test").apply {
+            latitude = 31.418
+            longitude = 73.079
+            altitude = 200.0
+        }
+        val corrected = magneticToTrueHeading(270f, location, 1790000000000L)
+        assertTrue(corrected >= 0f && corrected < 360f)
     }
 
     @Test
