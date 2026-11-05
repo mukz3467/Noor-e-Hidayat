@@ -1,6 +1,9 @@
 package com.noorehidayat.app
 
 import android.annotation.SuppressLint
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.content.Context
 import android.app.DownloadManager
 import android.net.Uri
@@ -15,6 +18,8 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -226,10 +231,13 @@ internal fun resolveBackPage(page:String,mediaParentPage:String,videoParentPage:
  var quizAnswer by remember{mutableIntStateOf(-1)}
  var history by remember{mutableStateOf(prefsHistory(ctx))}
  var favs by remember{mutableStateOf(setOf<Int>())}
+ var dailyReminderEnabled by remember{mutableStateOf(false)}
  var tafseerSurah by remember{mutableStateOf<Surah?>(null)}
  LaunchedEffect(Unit){
   favs=prefs.getStringSet("favs",emptySet())?.mapNotNull{it.toIntOrNull()}?.toSet()?:emptySet()
   lang=prefs.getString("lang","English")?:"English"
+  dailyReminderEnabled=prefs.getBoolean("daily_reminder_enabled",false)
+  if(dailyReminderEnabled) DailyReminderScheduler.schedule(ctx)
   quranTranslation=prefs.getString("quran_translation","en.sahih")?:"en.sahih"
  }
  LaunchedEffect(surahReloadKey){surahLoading=true;catalogueError="";try{surahs=getSurahs(ctx)}catch(e:Exception){catalogueError="Quran catalogue unavailable. Check your internet connection and tap Retry."}finally{surahLoading=false}}
@@ -275,7 +283,7 @@ internal fun resolveBackPage(page:String,mediaParentPage:String,videoParentPage:
      "Qibla"->QiblaScreen()
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
-     "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},quranTranslation,{edition->quranTranslation=edition;prefs.edit().putString("quran_translation",edition).apply();ayahReloadKey++},translationEditions,translationsLoading,translationsError,{translationReloadKey++},privacyOptionsRequired,onPrivacyOptions)
+     "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},quranTranslation,{edition->quranTranslation=edition;prefs.edit().putString("quran_translation",edition).apply();ayahReloadKey++},translationEditions,translationsLoading,translationsError,{translationReloadKey++},dailyReminderEnabled,{enabled->dailyReminderEnabled=enabled;prefs.edit().putBoolean("daily_reminder_enabled",enabled).apply();if(enabled)DailyReminderScheduler.schedule(ctx)else DailyReminderScheduler.cancel(ctx)},privacyOptionsRequired,onPrivacyOptions)
      "VideoLibrary"->VideoLibraryScreen(videoCategory,search){target->if(target.startsWith("https://"))openWeb(videoCategory,target)else if(target.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+target+"&playsinline=1")}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
      else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";search=query;page="VideoLibrary"})
@@ -633,13 +641,28 @@ private val quizData=listOf(
   }
  }
 }
-@Composable private fun SettingsScreen(lang:String,change:(String)->Unit,translationEdition:String,changeTranslation:(String)->Unit,editions:List<QuranTranslationEdition>,loading:Boolean,error:String,retry:()->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
+@Composable private fun SettingsScreen(lang:String,change:(String)->Unit,translationEdition:String,changeTranslation:(String)->Unit,editions:List<QuranTranslationEdition>,loading:Boolean,error:String,retry:()->Unit,dailyReminderEnabled:Boolean,onDailyReminderChange:(Boolean)->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
  var expanded by remember{mutableStateOf(false)}
+ val context=LocalContext.current
+ val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->if(granted)onDailyReminderChange(true)}
  Base{
   Heading("PREFERENCES","Settings")
   Text("App language preference",color=Gold)
   listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)}
   Spacer(Modifier.height(18.dp))
+  Spacer(Modifier.height(12.dp))
+  Row(Modifier.fillMaxWidth().padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
+   Column(Modifier.weight(1f)){
+    Text("Daily Islamic reminder",color=Gold,fontWeight=FontWeight.SemiBold)
+    Text("A gentle daily prompt for Quran recitation, dhikr and reflection. No quoted Hadith or unsourced religious text.",color=Muted,fontSize=11.sp,lineHeight=16.sp)
+   }
+   Switch(checked=dailyReminderEnabled,onCheckedChange={enabled->
+    if(enabled&&Build.VERSION.SDK_INT>=33&&context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)}
+    else onDailyReminderChange(enabled)
+   })
+  }
+  Text("When enabled, a reminder is scheduled for 9:00 AM local time. Android battery settings may delay it.",color=Muted,fontSize=10.sp,lineHeight=15.sp)
+  Spacer(Modifier.height(14.dp))
   Text("Quran translation",color=Gold)
   Box{
    OutlinedButton(onClick={expanded=true},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.outlinedButtonColors(contentColor=Gold)){

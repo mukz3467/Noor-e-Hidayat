@@ -93,6 +93,12 @@ class NoorSmokeTest {
     }
 
     @Test
+    fun dailyReminderMessageIsNonEmptyAndDeterministic() {
+        assertTrue(dailyReminderMessage(42).isNotBlank())
+        assertTrue(dailyReminderMessage(42) == dailyReminderMessage(42))
+    }
+
+    @Test
     fun discoverOpensVideoLibraryWithLanguageAndTopicFilters() {
         composeRule.onNodeWithText("Discover").performClick()
         composeRule.onNodeWithText("Islamic Dramas").performClick()
