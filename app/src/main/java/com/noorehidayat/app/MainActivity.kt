@@ -249,7 +249,7 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
       })
      "Tafseer"->TafseerScreen(tafseerSurah)
      "Prayer Times"->PrayerTimesScreen()
-     "Offline Audio"->OfflineAudioScreen(surahs,{surah->openWeb(surah.english+" · Offline audio",offlineSurahAudioUri(ctx,surah.number))},{surah->offlineSurahAudioFile(ctx,surah.number).delete()})
+     "Offline Audio"->OfflineAudioScreen(surahs,{surah->openWeb(surah.english+" · Offline audio",offlineSurahAudioUri(ctx,surah.number))},{surah->deleteOfflineSurah(ctx,surah.number)})
      "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
      "Recitations"->RecitationsScreen(surahs,recitations,selectedRecitation,recitationsLoading,recitationsError,{selectedRecitation=it},{recitation,s->openWeb(s.english+" · "+recitation.reciter,recitationUrl(recitation,s.number))},{recitations=emptyList();selectedRecitation=null})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
@@ -317,6 +317,25 @@ internal fun offlineSurahAudioFile(context:Context,number:Int):File {
  return File(root,"noor-surah-$number.mp3")
 }
 internal fun offlineSurahAudioUri(context:Context,number:Int):String = Uri.fromFile(offlineSurahAudioFile(context,number)).toString()
+internal fun isOfflineSurahReady(context:Context,number:Int):Boolean {
+ val file=offlineSurahAudioFile(context,number)
+ if(!file.exists()||file.length()<=0L)return false
+ val id=context.getSharedPreferences("noor_prefs",0).getLong("offline_download_"+number,-1L)
+ if(id<0L)return true
+ return try{
+  val query=DownloadManager.Query().setFilterById(id)
+  (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).query(query).use{cursor->
+   cursor.moveToFirst()&&cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))==DownloadManager.STATUS_SUCCESSFUL
+  }
+ }catch(_:Exception){false}
+}
+internal fun deleteOfflineSurah(context:Context,number:Int) {
+ val prefs=context.getSharedPreferences("noor_prefs",0)
+ val id=prefs.getLong("offline_download_"+number,-1L)
+ if(id>=0L)try{(context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).remove(id)}catch(_:Exception){}
+ offlineSurahAudioFile(context,number).delete()
+ prefs.edit().remove("offline_download_"+number).remove("offline_title_"+number).apply()
+}
 internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
  val file=offlineSurahAudioFile(context,surah.number)
  if(file.exists()&&file.length()>0L)return false
@@ -346,7 +365,7 @@ internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
 @Composable private fun OfflineAudioScreen(data:List<Surah>,play:(Surah)->Unit,remove:(Surah)->Unit){
  val context=LocalContext.current
  var refresh by remember{mutableIntStateOf(0)}
- val saved=remember(data,refresh){data.filter{surah->offlineSurahAudioFile(context,surah.number).let{file->file.exists()&&file.length()>0L}}}
+ val saved=remember(data,refresh){data.filter{surah->isOfflineSurahReady(context,surah.number)}}
  Base{
   Heading("LISTEN ANYWHERE","Offline audio")
   Text("Downloaded Surah recitations are stored in this app's private music folder and can play without an internet connection.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
