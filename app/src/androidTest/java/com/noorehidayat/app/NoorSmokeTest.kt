@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,8 +43,8 @@ class NoorSmokeTest {
     fun qiblaBearingUsesGreatCircleDirection() {
         val atKaaba = calculateQiblaBearing(21.4225, 39.8262)
         val fromFaisalabad = calculateQiblaBearing(31.418, 73.079)
-        assert(kotlin.math.abs(atKaaba) < 0.01f)
-        assert(kotlin.math.abs(fromFaisalabad - 259.55f) < 0.5f)
+        assertTrue(kotlin.math.abs(atKaaba) < 0.01f)
+        assertTrue(kotlin.math.abs(fromFaisalabad - 259.55f) < 0.5f)
     }
 
     @Test
