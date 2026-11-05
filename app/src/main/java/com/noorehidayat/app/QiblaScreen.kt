@@ -10,7 +10,6 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -104,7 +103,7 @@ internal fun QiblaScreen() {
                 listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).forEach { provider ->
                     try {
                         if (locationManager.isProviderEnabled(provider)) {
-                            locationManager.requestLocationUpdates(provider, 3000L, 5f, listener, Looper.getMainLooper())
+                            locationManager.requestLocationUpdates(provider, 3000L, 5f, listener)
                         }
                     } catch (_: SecurityException) {
                         locationError = "Location permission was revoked. Please enable it again."
