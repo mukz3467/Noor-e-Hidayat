@@ -454,8 +454,13 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
    Triple("1. Arabic alphabet","Recognise the 28 Arabic letters and their different written forms.","Start by learning each letter's name, shape and basic sound. Practise connecting letters at the beginning, middle and end of words."),
    Triple("2. Harakat and joining","Learn Fathah, Kasrah, Dammah, Sukoon and Shaddah.","Read short combinations slowly. Focus on the vowel sound and whether a letter is sakin or doubled."),
    Triple("3. Makharij al-Huruf","Understand where Arabic letters are articulated.","The articulation points include the throat, tongue, lips and nasal passage. Correct pronunciation needs listening to and correction by a qualified teacher."),
-   Triple("4. Basic Tajweed","Study Noon Sakinah, Tanween, Meem Sakinah, Madd and Qalqalah.","Learn each rule with examples from a teacher, then practise by listening and repeating. Do not rely on text descriptions alone for pronunciation."),
-   Triple("5. Daily revision","Build a consistent and realistic practice routine.","Spend 10–15 minutes revising known letters and reading a short passage. Record difficult letters and ask your teacher to correct them.")
+   Triple("4. Noon Sakinah & Tanween","Learn the four core rules: Izhar, Idgham, Iqlab and Ikhfa.","These rules depend on the letter that follows Noon Sakinah or Tanween. Study the letter groups with a qualified teacher and listen to clear recitation examples."),
+   Triple("5. Meem Sakinah","Study Ikhfa Shafawi, Idgham Shafawi and Izhar Shafawi.","The following letter determines the rule: Ba for Ikhfa Shafawi, Meem for Idgham Shafawi, and other letters for Izhar Shafawi. Practise with a teacher."),
+   Triple("6. Madd (elongation)","Understand natural Madd and the main causes of longer elongation.","Natural Madd is commonly taught as two counts. Other Madd types have different durations depending on the rule and recitation tradition; learn them by listening and guided practice."),
+   Triple("7. Qalqalah","Recognise the Qalqalah letters: ق ط ب ج د.","Qalqalah is heard when one of these letters carries Sukoon. Learn the sound without adding a full vowel, and practise the examples with a teacher."),
+   Triple("8. Ghunnah","Learn the nasal sound associated with Noon and Meem in their relevant rules.","Listen carefully to the nasal resonance and practise its duration in examples such as Noon or Meem with Shaddah. A teacher should correct the sound."),
+   Triple("9. Waqf and Ibtida","Learn how to stop and resume recitation while preserving meaning.","Study the common Mushaf stopping symbols and learn where a pause is appropriate. Do not stop at a place that changes the intended meaning."),
+   Triple("10. Daily revision","Build a consistent and realistic practice routine.","Spend 10–15 minutes revising known letters and reading a short passage. Record difficult letters and ask your teacher to correct them.")
   )
   lessons.forEach{(title,summary,detail)->
    Card(Modifier.fillMaxWidth().padding(bottom=10.dp),shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
