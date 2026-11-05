@@ -8,7 +8,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Quran catalogue with search across surah names, translations and numbers.
 - Surah reader with Uthmani Arabic text and dynamically discovered text translation editions across the languages published by AlQuran Cloud, including Urdu and English where available.
 - Tafseer reader that discovers text Tafseer editions from AlQuran Cloud and loads the selected edition by Surah; Urdu editions are prioritised when available.
-- Location-based prayer timetable using the Aladhan service with the Karachi calculation method and Hanafi Asr setting.
+- Location-based prayer timetable using the AlAdhan service, with selectable calculation methods and Hanafi/Shafi'i Asr settings.
 - Qibla compass using the device location and rotation-vector sensor.
 - Surah audio playback through AndroidX Media3 / ExoPlayer using AlQuran Cloud audio, with buffering/error feedback and retry controls.
 - Recitation catalogue.
@@ -24,6 +24,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 
 - Quran text and translations: AlQuran Cloud API (https://alquran.cloud/api).
 - Quran audio: AlQuran Cloud audio CDN (https://cdn.islamic.network/quran/audio-surah/).
+- Prayer times: AlAdhan API (https://aladhan.com/prayer-times-api).
 - Live broadcasts and YouTube playback depend on the relevant provider, internet connection, region, content settings and embedding permissions.
 
 ## Important limitations before public release
