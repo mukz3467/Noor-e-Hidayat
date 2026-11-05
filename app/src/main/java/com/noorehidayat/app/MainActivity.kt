@@ -10,6 +10,7 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -553,7 +554,7 @@ private val quizData=listOf(
        playbackError=""
       }
      }catch(error:Exception){if(!disposed)playbackError="Audio player service could not connect. Retry playback."}
-    },ctx.mainExecutor)
+    },ContextCompat.getMainExecutor(ctx))
    }catch(error:Exception){playbackError="Audio player could not be started. Retry playback."}
   }
   onDispose{
