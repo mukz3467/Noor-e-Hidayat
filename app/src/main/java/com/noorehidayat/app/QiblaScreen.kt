@@ -7,6 +7,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.hardware.GeomagneticField
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -44,6 +45,11 @@ private val QiblaCream = Color(0xFFFFF4DE)
 private val QiblaMuted = Color(0xFFB7C9BC)
 
 private fun normalizeDegrees(value: Float): Float = ((value % 360f) + 360f) % 360f
+
+internal fun magneticToTrueHeading(magneticHeading: Float, location: Location, timeMillis: Long = System.currentTimeMillis()): Float {
+    val field = GeomagneticField(location.latitude.toFloat(), location.longitude.toFloat(), location.altitude.toFloat(), timeMillis)
+    return normalizeDegrees(magneticHeading + field.declination)
+}
 
 internal fun calculateQiblaBearing(latitude: Double, longitude: Double): Float {
     val lat1 = Math.toRadians(latitude)
@@ -135,7 +141,8 @@ internal fun QiblaScreen() {
     }
 
     val bearing = coordinates?.let { calculateQiblaBearing(it.latitude, it.longitude) }
-    val relativeDirection = if (bearing != null && heading != null) normalizeDegrees(bearing - heading!!) else null
+    val correctedHeading = coordinates?.let { location -> heading?.let { magneticToTrueHeading(it, location) } }
+    val relativeDirection = if (bearing != null && correctedHeading != null) normalizeDegrees(bearing - correctedHeading) else null
 
     Column(Modifier.fillMaxSize().background(QiblaBackground).padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("DIRECTION OF PRAYER", color = QiblaGold, fontSize = 10.sp, letterSpacing = 2.sp)
