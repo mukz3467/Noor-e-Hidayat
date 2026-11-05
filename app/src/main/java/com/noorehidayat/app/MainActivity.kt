@@ -74,7 +74,7 @@ private val Gold=Color(0xFFE7C879)
 private val Cream=Color(0xFFFFF4DE)
 private val Muted=Color(0xFFB7C9BC)
 private val Border=Color(0xFF355B45)
-private fun localized(lang:String,english:String,urdu:String)=if(lang=="اردو")urdu else english
+internal fun localized(lang:String,english:String,urdu:String)=if(lang=="اردو")urdu else english
 data class Surah(val number:Int,val name:String,val english:String,val meaning:String,val ayahs:Int,val type:String)
 data class Ayah(val number:Int,val arabic:String,val translation:String)
 data class Recitation(val reciter:String,val style:String,val server:String,val surahs:Set<Int>){val label get()="$reciter · $style"}
@@ -655,7 +655,7 @@ private val quizData=listOf(
  val context=LocalContext.current
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->if(granted)onDailyReminderChange(true)}
  Base{
-  Heading("PREFERENCES","Settings")
+  Heading(localized(lang,"PREFERENCES","ترجیحات"),localized(lang,"Settings","ترتیبات"))
   Text(localized(lang,"App language preference","ایپ کی زبان"),color=Gold)
   listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)}
   Spacer(Modifier.height(18.dp))
@@ -685,7 +685,7 @@ private val quizData=listOf(
   if(loading)LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=8.dp),color=Gold)
   if(error.isNotBlank()){Text(error,color=Gold,fontSize=12.sp,modifier=Modifier.padding(top=8.dp));TextButton(onClick=retry){Text("Retry translations",color=Gold)}}
   Text(localized(lang,"Choose a translation edition from AlQuran Cloud. Some learning and external content remains in its original language.","AlQuran Cloud سے ترجمے کا نسخہ منتخب کریں۔ کچھ تعلیمی اور بیرونی مواد اپنی اصل زبان میں رہے گا۔"),color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp))
-  if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Privacy options")}}
+  if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(localized(lang,"Privacy options","رازداری کے اختیارات"))}}
  }
 }
 @SuppressLint("SetJavaScriptEnabled")
