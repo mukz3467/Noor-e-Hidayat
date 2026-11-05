@@ -614,7 +614,7 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
     TextButton(onClick={webError="";webLoading=true;webViewRef.value?.reload()}){Text("Retry page",color=Gold)}
    }
    Text("Web links stay inside the app. YouTube playback, ads, sign-in and regional restrictions remain controlled by YouTube.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(top=10.dp))
-  }else if(player!=null){
+  }else if(audio){
    if(buffering||player==null&&playbackError.isBlank())LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
    if(player!=null)AndroidView(factory={c->PlayerView(c).apply{this.player=player;useController=true}},update={it.player=player},modifier=Modifier.fillMaxWidth().height(245.dp))
    if(playbackError.isNotBlank())Column(Modifier.fillMaxWidth().padding(top=10.dp)){
