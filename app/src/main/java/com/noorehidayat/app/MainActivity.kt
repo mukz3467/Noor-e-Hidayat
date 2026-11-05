@@ -2,6 +2,7 @@ package com.noorehidayat.app
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.ComponentName
 import android.os.Bundle
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -35,6 +36,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -500,18 +503,47 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
  var webLoading by remember(url){mutableStateOf(true)}
  var webError by remember(url){mutableStateOf("")}
  val webViewRef=remember(url){mutableStateOf<WebView?>(null)}
- val player= remember(url){
-  if(audio&&url.isNotBlank()) ExoPlayer.Builder(ctx).build().apply{setMediaItem(MediaItem.fromUri(url));prepare()} else null
- }
+ var player by remember(url){mutableStateOf<MediaController?>(null)}
  var playbackError by remember(url){mutableStateOf("")}
  var buffering by remember(url){mutableStateOf(false)}
+ var playbackRetry by remember(url){mutableIntStateOf(0)}
+ DisposableEffect(url,playbackRetry){
+  var disposed=false
+  var controllerFuture:com.google.common.util.concurrent.ListenableFuture<MediaController>?=null
+  player=null
+  if(audio&&url.isNotBlank()){
+   try{
+    val token=SessionToken(ctx,ComponentName(ctx,PlaybackService::class.java))
+    val future=MediaController.Builder(ctx,token).buildAsync()
+    controllerFuture=future
+    future.addListener({
+     try{
+      val controller=future.get()
+      if(!disposed){
+       val metadata=androidx.media3.common.MediaMetadata.Builder().setTitle(title).setArtist("Noor-e-Hidayat").build()
+       controller.setMediaItem(MediaItem.Builder().setUri(url).setMediaMetadata(metadata).build())
+       controller.prepare()
+       player=controller
+       playbackError=""
+      }
+     }catch(error:Exception){if(!disposed)playbackError="Audio player service could not connect. Retry playback."}
+    },ctx.mainExecutor)
+   }catch(error:Exception){playbackError="Audio player could not be started. Retry playback."}
+  }
+  onDispose{
+   disposed=true
+   controllerFuture?.let{MediaController.releaseFuture(it)}
+   player=null
+  }
+ }
  DisposableEffect(player){
+  val current=player
   val listener=object:Player.Listener{
    override fun onPlayerError(error:PlaybackException){playbackError="Audio could not be played. Check your connection and retry."}
    override fun onPlaybackStateChanged(state:Int){buffering=state==Player.STATE_BUFFERING;if(state==Player.STATE_READY)playbackError=""}
   }
-  player?.addListener(listener)
-  onDispose{player?.removeListener(listener);player?.release()}
+  current?.addListener(listener)
+  onDispose{current?.removeListener(listener)}
  }
  DisposableEffect(url){onDispose{webViewRef.value?.stopLoading();webViewRef.value?.destroy();webViewRef.value=null}}
  Base{
@@ -583,11 +615,11 @@ private val quizData=listOf(Q("How many daily obligatory prayers are there?",lis
    }
    Text("Web links stay inside the app. YouTube playback, ads, sign-in and regional restrictions remain controlled by YouTube.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(top=10.dp))
   }else if(player!=null){
-   if(buffering)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
-   AndroidView(factory={c->PlayerView(c).apply{this.player=player;useController=true}},modifier=Modifier.fillMaxWidth().height(245.dp))
+   if(buffering||player==null&&playbackError.isBlank())LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold)
+   if(player!=null)AndroidView(factory={c->PlayerView(c).apply{this.player=player;useController=true}},update={it.player=player},modifier=Modifier.fillMaxWidth().height(245.dp))
    if(playbackError.isNotBlank())Column(Modifier.fillMaxWidth().padding(top=10.dp)){
     Text(playbackError,color=Gold,fontSize=12.sp)
-    TextButton(onClick={playbackError="";player.seekTo(0);player.prepare();player.playWhenReady=true}){Text("Retry audio",color=Gold)}
+    TextButton(onClick={if(player!=null){playbackError="";player?.seekTo(0);player?.prepare();player?.playWhenReady=true}else{playbackError="";playbackRetry++}}){Text("Retry audio",color=Gold)}
    }
    Text("Quran audio streamed from AlQuran Cloud using Media3 ExoPlayer.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
   }else{Text("This media link is not supported.",color=Muted)}

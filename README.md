@@ -10,7 +10,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Tafseer reader that discovers text Tafseer editions from AlQuran Cloud and loads the selected edition by Surah; Urdu editions are prioritised when available.
 - Location-based prayer timetable using the AlAdhan service, with selectable calculation methods and Hanafi/Shafi'i Asr settings.
 - Qibla compass using the device location and rotation-vector sensor.
-- Surah audio playback through AndroidX Media3 / ExoPlayer using AlQuran Cloud audio, with buffering/error feedback and retry controls.
+- Surah audio playback through AndroidX Media3 / ExoPlayer using AlQuran Cloud audio, with buffering/error feedback, retry controls and a MediaSession foreground service for background playback and system media controls.
 - Recitation catalogue.
 - Beginner Quran-learning guidance covering Arabic letters, harakat, makharij, introductory Tajweed topics and revision.
 - Basic Islamic knowledge quiz with scoring and replay.
@@ -56,6 +56,7 @@ GitHub Actions builds a debug APK on pushes to `main`. Download the artifact fro
 
 - AlQuran Cloud API: https://alquran.cloud/api
 - AndroidX Media3: https://developer.android.com/media/media3
+- Media3 background playback: https://developer.android.com/media/media3/session/background-playback
 - Google Mobile Ads SDK: https://developers.google.com/admob/android/quick-start
 - Google UMP consent SDK: https://developers.google.com/admob/android/privacy
 - YouTube embedded player requirements: https://developers.google.com/youtube/terms/required-minimum-functionality
