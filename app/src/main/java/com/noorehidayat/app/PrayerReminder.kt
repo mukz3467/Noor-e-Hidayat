@@ -52,6 +52,16 @@ internal object PrayerReminderScheduler {
         scheduleNextRefresh(context)
     }
 
+    fun cancelAll(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        prayerNames.forEachIndexed { index, name ->
+            alarmManager.cancel(notificationIntent(context, name, 4100 + index))
+        }
+        val refreshIntent = Intent(context, PrayerReminderReceiver::class.java).setAction(ACTION_REFRESH)
+        val refreshPending = PendingIntent.getBroadcast(context, 4999, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        alarmManager.cancel(refreshPending)
+    }
+
     fun scheduleNextRefresh(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val calendar = Calendar.getInstance().apply {

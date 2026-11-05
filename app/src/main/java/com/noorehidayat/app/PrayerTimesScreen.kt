@@ -46,7 +46,8 @@ private suspend fun prayerData(lat:Double,lon:Double,method:Int,school:Int):Pair
  val launcher=rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){r->allowed=r.values.any{it};if(allowed)locate()else error="Location permission is needed for local prayer times."}
  LaunchedEffect(Unit){allowed=permitted(ctx);if(allowed)locate()}
  DisposableEffect(allowed){if(!allowed)onDispose{} else {val listener=LocationListener{x->loc=x};try{listOf(LocationManager.NETWORK_PROVIDER,LocationManager.GPS_PROVIDER).forEach{p->try{if(permitted(ctx)&&lm.isProviderEnabled(p))lm.requestLocationUpdates(p,5000L,50f,listener)}catch(_:Exception){}}}catch(_:Exception){};onDispose{try{lm.removeUpdates(listener)}catch(_:Exception){}}}}
- LaunchedEffect(loc?.latitude,loc?.longitude,method,school){val l=loc?:return@LaunchedEffect;loading=true;error="";try{prefs.edit().putString("prayer_latitude",l.latitude.toString()).putString("prayer_longitude",l.longitude.toString()).apply();val r=prayerData(l.latitude,l.longitude,method,school);rows=r.first;date=r.second;if(remindersEnabled)PrayerReminderScheduler.scheduleDay(ctx,rows.associate{it.name to it.time})}catch(_:Exception){error="Prayer times could not be loaded. Check your connection and tap Retry."}finally{loading=false}}
+ LaunchedEffect(loc?.latitude,loc?.longitude,method,school){val l=loc?:return@LaunchedEffect;loading=true;error="";try{prefs.edit().putString("prayer_latitude",l.latitude.toString()).putString("prayer_longitude",l.longitude.toString()).apply();val r=prayerData(l.latitude,l.longitude,method,school);rows=r.first;date=r.second}catch(_:Exception){error="Prayer times could not be loaded. Check your connection and tap Retry."}finally{loading=false}}
+ LaunchedEffect(remindersEnabled,rows){if(remindersEnabled&&rows.isNotEmpty())PrayerReminderScheduler.scheduleDay(ctx,rows.associate{it.name to it.time})}
  Column(Modifier.fillMaxSize().background(PB).padding(horizontal=18.dp),horizontalAlignment=Alignment.CenterHorizontally){Text("DAILY WORSHIP",color=PG,fontSize=10.sp,letterSpacing=2.sp);Text("Prayer Times",color=PC,fontSize=27.sp,fontWeight=FontWeight.Bold);Text("Based on your current device location",color=PM,fontSize=12.sp);Spacer(Modifier.height(16.dp))
  if(loc==null){Icon(Icons.Default.LocationOn,null,tint=PG,modifier=Modifier.size(42.dp));Text("Allow location to calculate local prayer times.",color=PC,modifier=Modifier.padding(12.dp));Button(onClick={launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))},colors=ButtonDefaults.buttonColors(containerColor=PG,contentColor=PB)){Text("Allow location")}}
  else{
@@ -71,7 +72,7 @@ private suspend fun prayerData(lat:Double,lon:Double,method:Int,school:Int):Pair
    if(enable){
     if(Build.VERSION.SDK_INT>=33&&!reminderPermission)notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     else{remindersEnabled=true;prefs.edit().putBoolean("prayer_reminders_enabled",true).apply();if(rows.isNotEmpty())PrayerReminderScheduler.scheduleDay(ctx,rows.associate{it.name to it.time})}
-   }else{remindersEnabled=false;prefs.edit().putBoolean("prayer_reminders_enabled",false).apply()}
+   }else{remindersEnabled=false;prefs.edit().putBoolean("prayer_reminders_enabled",false).apply();PrayerReminderScheduler.cancelAll(ctx)}
   })
  }
  if(remindersEnabled)Text("Notifications are enabled. Android battery optimisation may delay reminders.",color=PM,fontSize=10.sp,lineHeight=15.sp)
