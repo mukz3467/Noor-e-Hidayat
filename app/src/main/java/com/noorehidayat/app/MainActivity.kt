@@ -179,6 +179,17 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
  }catch(error:Exception){val cached=prefs.getString(key,null)?:throw error;parseAyahs(cached)}
 }
 
+internal fun resolveBackPage(page:String,mediaParentPage:String,videoParentPage:String):String = when(page){
+ "Reader"->"Quran"
+ "Tafseer"->"Reader"
+ "Prayer Times","Offline Audio"->"More"
+ "Media"->mediaParentPage
+ "VideoLibrary"->videoParentPage
+ "Recitations","Lectures"->"Discover"
+ "Learning","Quiz","Qibla","Favourites","History","Settings"->"More"
+ else->"Home"
+}
+
 @Composable private fun NoorApp(adsAllowed:Boolean,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
  val ctx= LocalContext.current
  val prefs=remember{ctx.getSharedPreferences("noor_prefs",0)}
@@ -227,7 +238,7 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
  fun openTafseer(s:Surah){tafseerSurah=s;page="Tafseer"}
  LaunchedEffect(selected,page,ayahReloadKey,quranTranslation){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(ctx,s.number,quranTranslation)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
  fun openWeb(title:String,url:String){mediaParentPage=page;mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
- BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Tafseer"->"Reader";"Prayer Times"->"More";"Offline Audio"->"More";"Media"->mediaParentPage;"VideoLibrary"->videoParentPage;else->"Home"}}
+ BackHandler(page!="Home"){page=resolveBackPage(page,mediaParentPage,videoParentPage)}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Tafseer","Media"))Column { NavigationBar(containerColor=Deep){

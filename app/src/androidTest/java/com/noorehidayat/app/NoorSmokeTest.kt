@@ -20,6 +20,14 @@ class NoorSmokeTest {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
+    fun backNavigationReturnsToPreviousFeature() {
+        assertTrue(resolveBackPage("Media", "Offline Audio", "Discover") == "Offline Audio")
+        assertTrue(resolveBackPage("VideoLibrary", "Home", "Lectures") == "Lectures")
+        assertTrue(resolveBackPage("Recitations", "Home", "Discover") == "Discover")
+        assertTrue(resolveBackPage("Qibla", "Home", "Discover") == "More")
+    }
+
+    @Test
     fun learningGuideOpensFromMoreTab() {
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("Learning").performClick()
