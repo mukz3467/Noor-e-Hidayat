@@ -45,6 +45,7 @@ private val QiblaCream = Color(0xFFFFF4DE)
 private val QiblaMuted = Color(0xFFB7C9BC)
 
 private fun normalizeDegrees(value: Float): Float = ((value % 360f) + 360f) % 360f
+internal fun shortestCompassTurn(degrees: Float): Float = ((degrees + 540f) % 360f) - 180f
 
 internal fun magneticToTrueHeading(magneticHeading: Float, location: Location, timeMillis: Long = System.currentTimeMillis()): Float {
     val field = GeomagneticField(location.latitude.toFloat(), location.longitude.toFloat(), location.altitude.toFloat(), timeMillis)
@@ -143,6 +144,7 @@ internal fun QiblaScreen() {
     val bearing = coordinates?.let { calculateQiblaBearing(it.latitude, it.longitude) }
     val correctedHeading = coordinates?.let { location -> heading?.let { magneticToTrueHeading(it, location) } }
     val relativeDirection = if (bearing != null && correctedHeading != null) normalizeDegrees(bearing - correctedHeading) else null
+    val shortestTurn = relativeDirection?.let { shortestCompassTurn(it) }
 
     Column(Modifier.fillMaxSize().background(QiblaBackground).padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("DIRECTION OF PRAYER", color = QiblaGold, fontSize = 10.sp, letterSpacing = 2.sp)
@@ -162,7 +164,7 @@ internal fun QiblaScreen() {
             Text("QIBLA BEARING", color = QiblaMuted, fontSize = 10.sp, letterSpacing = 1.5.sp)
             Text("${bearing.toInt()}°", color = QiblaGold, fontSize = 34.sp, fontWeight = FontWeight.Bold)
             if (relativeDirection == null) Text("Waiting for compass sensor…", color = QiblaMuted, fontSize = 12.sp)
-            else Text("Turn your phone ${relativeDirection.toInt()}° clockwise from north", color = QiblaCream, fontSize = 12.sp)
+            else Text(if ((shortestTurn ?: 0f) >= 0f) "Turn clockwise by ${shortestTurn?.toInt()}° to face the Qibla" else "Turn counterclockwise by ${kotlin.math.abs(shortestTurn ?: 0f).toInt()}° to face the Qibla", color = QiblaCream, fontSize = 12.sp)
             coordinates?.let { Text("Location accuracy: ${it.accuracy.toInt()} m", color = QiblaMuted, fontSize = 11.sp) }
         } else {
             Text("Find Qibla direction", color = QiblaGold, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
