@@ -71,4 +71,4 @@ GitHub Actions builds a debug APK on pushes to `main`. Download the artifact fro
 
 - YouTube discovery uses user-initiated search and YouTube playback; the app does not claim to own or curate third-party videos.
 - The Quran video-courses entry opens an external resource index that lists courses and playlists published on teachers’ own YouTube channels. Content ownership and availability remain with those publishers and YouTube.
-- Makkah and Madinah live entries open broadcaster pages; stream availability is controlled by the broadcaster.
+- Makkah and Madinah live entries open third-party pages that embed YouTube channel streams. They are not presented as official broadcaster websites; stream availability is controlled by YouTube and the channel owner.

@@ -560,11 +560,11 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
 
 @Composable private fun LiveScreen(lang:String,open:(String,String)->Unit){Base{
  Heading(localized(lang,"LIVE BROADCASTS","براہ راست نشریات"),localized(lang,"Makkah & Madinah","مکہ اور مدینہ"))
- Text(localized(lang,"Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.","سرکاری نشریاتی صفحات ایپ کے اندر کھلیں گے۔ نشریات کی دستیابی متعلقہ ادارے کے اختیار میں ہے۔"),color=Muted,fontSize=13.sp)
+ Text(localized(lang,"Live channel pages open inside the app. These pages embed YouTube streams; availability is controlled by YouTube and the channel owner.","براہ راست چینل کے صفحات ایپ میں کھلیں گے۔ ان صفحات میں یوٹیوب اسٹریم شامل ہے؛ دستیابی یوٹیوب اور چینل کے مالک کے اختیار میں ہے۔"),color=Muted,fontSize=13.sp)
  Spacer(Modifier.height(18.dp))
- Tile(localized(lang,"Masjid al-Haram · Makkah","مسجد الحرام · مکہ"),localized(lang,"Saudi Quran TV broadcaster page","سعودی قرآن ٹی وی کا نشریاتی صفحہ"),"🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")}
+ Tile(localized(lang,"Masjid al-Haram · Makkah","مسجد الحرام · مکہ"),localized(lang,"Quran TV live page","قرآن ٹی وی کا براہ راست صفحہ"),"🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")}
  Spacer(Modifier.height(12.dp))
- Tile(localized(lang,"Al-Masjid an-Nabawi · Madinah","مسجد نبوی ﷺ · مدینہ"),localized(lang,"Saudi Sunnah TV broadcaster page","سعودی سنت ٹی وی کا نشریاتی صفحہ"),"☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}
+ Tile(localized(lang,"Al-Masjid an-Nabawi · Madinah","مسجد نبوی ﷺ · مدینہ"),localized(lang,"Sunnah TV live page","سنت ٹی وی کا براہ راست صفحہ"),"☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}
 }}
 @Composable private fun MoreScreen(lang:String,go:(String)->Unit){
  Base{
