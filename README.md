@@ -14,7 +14,6 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Recitation catalogue.
 - Structured beginner Quran-learning path with Arabic letters, harakat, makharij, Noon/Meem rules, Madd, Qalqalah, Ghunnah, Waqf and revision.
 - Twenty-question Islamic knowledge quiz with scoring and replay.
-- Basic Islamic knowledge quiz with scoring and replay.
 - Makkah and Madinah broadcaster pages displayed in the in-app WebView.
 - Favourites, lightweight recently played-title history and saved language preference.
 - Adaptive anchored AdMob test banner on standard screens; banner is hidden on Quran Reader and Media Player screens.
@@ -32,7 +31,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 
 - Internet is required for first-time Quran catalogue/reader downloads, streamed audio, live pages, video search and Tafseer editions. The catalogue and eight most recently read Surah/translation pairs are cached for offline text reading.
 - Audio is streamed; offline audio downloads are not implemented. MediaSession foreground playback supports continuing audio when the app is backgrounded.
-- YouTube playback must use the official embedded player. YouTube controls, branding, provider ads, sign-in prompts and regional/age/content restrictions remain under YouTube's control.
+- Video discovery opens YouTube-hosted search pages inside the app; the app does not scrape, download or mirror videos. YouTube controls, branding, provider ads, sign-in prompts and regional/age/content restrictions remain under YouTube's control.
 - Video categories currently open provider-side YouTube search results; there is no curated or independently verified playlist catalogue in the app yet.
 - Live broadcaster pages are external services and must be tested on real devices and networks.
 - The app-language preference is saved, but full interface localization is not implemented yet. Quran translation choice is separate.
