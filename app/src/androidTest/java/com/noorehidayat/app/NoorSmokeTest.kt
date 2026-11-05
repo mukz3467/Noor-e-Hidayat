@@ -89,6 +89,8 @@ class NoorSmokeTest {
         composeRule.onNodeWithText("Urdu").assertIsDisplayed()
         composeRule.onNodeWithText("English").assertIsDisplayed()
         composeRule.onNodeWithText("Arabic").assertIsDisplayed()
+        composeRule.onNodeWithText("Hindi").assertIsDisplayed()
+        composeRule.onNodeWithText("Bengali").assertIsDisplayed()
         composeRule.onNodeWithText("POPULAR TOPICS").assertIsDisplayed()
         composeRule.onNodeWithText("Tafseer").assertIsDisplayed()
     }

@@ -21,6 +21,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -501,7 +502,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
 @Composable private fun VideoLibraryScreen(category:String,initialQuery:String,play:(String)->Unit){
  var searchText by remember(category){mutableStateOf(initialQuery.ifBlank{if(category=="Islamic Videos")"Islamic reminders" else ""})}
  var language by remember(category){mutableStateOf("All")}
- val languages=listOf("All","Urdu","English","Arabic")
+ val languages=listOf("All","Urdu","English","Arabic","Hindi","Bengali","Turkish","Indonesian","French")
  val topics=listOf("Quran recitation","Tafseer","Seerah","Hadith","Islamic reminders","Stories of Prophets","Islamic lectures","Kids & Family")
  fun runSearch(term:String){
   val query=listOf(category.takeUnless{it=="Islamic Videos"}?: "",term,language.takeUnless{it=="All"}?: "").filter{it.isNotBlank()}.joinToString(" ")
@@ -512,8 +513,8 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
   Text("Choose a language and topic. Noor-e-Hidayat organizes the search; video playback and availability remain provided by YouTube.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
   Spacer(Modifier.height(12.dp))
   Text("LANGUAGE",color=Gold,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
-  Row(horizontalArrangement=Arrangement.spacedBy(7.dp),modifier=Modifier.fillMaxWidth()){
-   languages.forEach{item->FilterChip(selected=language==item,onClick={language=item},label={Text(item,fontSize=11.sp)},colors=FilterChipDefaults.filterChipColors(selectedContainerColor=Gold,selectedLabelColor=Emerald,containerColor=Panel,labelColor=Cream))}
+  LazyRow(horizontalArrangement=Arrangement.spacedBy(7.dp),modifier=Modifier.fillMaxWidth()){
+   items(languages){item->FilterChip(selected=language==item,onClick={language=item},label={Text(item,fontSize=11.sp)},colors=FilterChipDefaults.filterChipColors(selectedContainerColor=Gold,selectedLabelColor=Emerald,containerColor=Panel,labelColor=Cream))}
   }
   Spacer(Modifier.height(12.dp))
   OutlinedTextField(value=searchText,onValueChange={searchText=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text("Search scholar, Surah or topic",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},colors=fieldColors())
