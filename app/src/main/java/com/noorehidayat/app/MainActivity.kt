@@ -244,7 +244,7 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
      "Live"->LiveScreen{t,u->openWeb(t,u)}
      "More"->MoreScreen{page=it}
      "Learning"->LearningScreen()
-     "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizIndex<quizData.size&&quizAnswer==-1){if(a==quizData[quizIndex].third)quizScore++;quizAnswer=a}},{if(quizIndex>=quizData.size){quizIndex=0;quizScore=0}else{quizIndex++};quizAnswer=-1})
+     "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizIndex<quizData.size&&quizAnswer==-1){if(a==quizData[quizIndex].correctIndex)quizScore++;quizAnswer=a}},{if(quizIndex>=quizData.size){quizIndex=0;quizScore=0}else{quizIndex++};quizAnswer=-1})
      "Qibla"->QiblaScreen()
      "Favourites"->FavouritesScreen(surahs.filter{favs.contains(it.number)},{openSurah(it)},{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()})
      "History"->HistoryScreen(history)
@@ -469,9 +469,30 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
   Text("Learning note: This guide is introductory and does not replace a qualified teacher or a verified Tajweed lesson.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(bottom=20.dp))
  }
 }
-private data class Q(val prompt:String,val options:List<String>,val third:Int)
-private val quizData=listOf(Q("How many daily obligatory prayers are there?",listOf("Three","Five","Seven"),1),Q("Which month do Muslims fast?",listOf("Ramadan","Shawwal","Muharram"),0),Q("Which direction do Muslims face in salah?",listOf("Jerusalem","The Kaaba","Madinah"),1),Q("What is the first month of the Islamic calendar?",listOf("Ramadan","Muharram","Rajab"),1),Q("What is the holy book of Islam?",listOf("Quran","Torah","Psalms"),0))
-@Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].third)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].third],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
+private data class Q(val prompt:String,val options:List<String>,val correctIndex:Int)
+private val quizData=listOf(
+ Q("How many daily obligatory prayers are there?",listOf("Three","Five","Seven"),1),
+ Q("Which month do Muslims fast?",listOf("Ramadan","Shawwal","Muharram"),0),
+ Q("Which direction do Muslims face in salah?",listOf("Jerusalem","The Kaaba","Madinah"),1),
+ Q("What is the first month of the Islamic calendar?",listOf("Ramadan","Muharram","Rajab"),1),
+ Q("What is the holy book of Islam?",listOf("Quran","Torah","Psalms"),0),
+ Q("How many Surahs are in the Quran?",listOf("99","114","120"),1),
+ Q("Which is the first Surah in the Quran?",listOf("Al-Baqarah","Al-Fatiha","Al-Ikhlas"),1),
+ Q("Which is the final Surah in the Quran?",listOf("Al-Falaq","Al-Kawthar","An-Nas"),2),
+ Q("To whom was the Quran revealed?",listOf("Prophet Musa","Prophet Muhammad ﷺ","Prophet Isa"),1),
+ Q("Which angel brought revelation to Prophet Muhammad ﷺ?",listOf("Mikail","Israfil","Jibril"),2),
+ Q("Where did the Prophet ﷺ migrate to from Makkah?",listOf("Taif","Madinah","Jerusalem"),1),
+ Q("Which month contains the Hajj pilgrimage?",listOf("Dhul-Hijjah","Muharram","Safar"),0),
+ Q("Which Eid marks the end of Ramadan?",listOf("Eid al-Adha","Eid al-Fitr","Ashura"),1),
+ Q("What is the Friday congregational prayer called?",listOf("Jumu'ah","Witr","Duha"),0),
+ Q("How many pillars of Islam are there?",listOf("Four","Five","Six"),1),
+ Q("What is Zakat?",listOf("Obligatory charity","A voluntary fast","A pilgrimage"),0),
+ Q("In which city is the Kaaba located?",listOf("Madinah","Makkah","Jerusalem"),1),
+ Q("Which Surah is the longest in the Quran?",listOf("Al-Imran","Al-Baqarah","An-Nisa"),1),
+ Q("How many Juz are in the Quran?",listOf("20","30","40"),1),
+ Q("Which Surah has three verses and is commonly identified as the shortest?",listOf("Al-Kawthar","Al-Asr","Al-Fil"),0)
+)
+@Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].correctIndex)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].correctIndex],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
 @Composable private fun HistoryScreen(history:List<String>){Base{Heading("YOUR ACTIVITY","Watch history");if(history.isEmpty())Text("No recently played items in this session.",color=Muted);history.forEach{Text(it,color=Cream,modifier=Modifier.fillMaxWidth().padding(12.dp).background(Panel,RoundedCornerShape(10.dp)).padding(10.dp))}}}
 @Composable private fun SettingsScreen(lang:String,change:(String)->Unit,translationEdition:String,changeTranslation:(String)->Unit,editions:List<QuranTranslationEdition>,loading:Boolean,error:String,retry:()->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
  var expanded by remember{mutableStateOf(false)}
