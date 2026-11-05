@@ -85,6 +85,7 @@ internal object PrayerReminderScheduler {
             scheduleDay(context, prayerNames.associateWith { timings.optString(it) })
         } finally {
             connection.disconnect()
+            scheduleNextRefresh(context)
         }
     }
 

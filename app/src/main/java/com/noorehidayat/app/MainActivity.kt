@@ -224,12 +224,12 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
  fun openTafseer(s:Surah){tafseerSurah=s;page="Tafseer"}
  LaunchedEffect(selected,page,ayahReloadKey,quranTranslation){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(ctx,s.number,quranTranslation)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
  fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
- BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Tafseer"->"Reader";"Prayer Times"->"More";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
+ BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Tafseer"->"Reader";"Prayer Times"->"More";"Offline Audio"->"More";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Tafseer","Media"))Column { NavigationBar(containerColor=Deep){
     listOf("Home","Quran","Discover","More").forEach{p->
-     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live")||(page=="VideoLibrary"&&videoParentPage=="Discover");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings","Prayer Times")}
+     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live")||(page=="VideoLibrary"&&videoParentPage=="Discover");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings","Prayer Times","Offline Audio")}
      NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
     }
    }
@@ -249,6 +249,7 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
       })
      "Tafseer"->TafseerScreen(tafseerSurah)
      "Prayer Times"->PrayerTimesScreen()
+     "Offline Audio"->OfflineAudioScreen(surahs,{surah->openWeb(surah.english+" · Offline audio",offlineSurahAudioUri(ctx,surah.number))},{surah->offlineSurahAudioFile(ctx,surah.number).delete()})
      "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
      "Recitations"->RecitationsScreen(surahs,recitations,selectedRecitation,recitationsLoading,recitationsError,{selectedRecitation=it},{recitation,s->openWeb(s.english+" · "+recitation.reciter,recitationUrl(recitation,s.number))},{recitations=emptyList();selectedRecitation=null})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
