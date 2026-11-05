@@ -42,7 +42,7 @@ class NoorSmokeTest {
     fun prayerTimesScreenOpensFromMore() {
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("Prayer Times").performClick()
-        composeRule.onNodeWithText("Calculated for your device location").assertIsDisplayed()
+        composeRule.onNodeWithText("Based on your current device location").assertIsDisplayed()
     }
 
     @Test

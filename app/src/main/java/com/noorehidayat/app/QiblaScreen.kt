@@ -139,7 +139,7 @@ internal fun QiblaScreen() {
 
     Column(Modifier.fillMaxSize().background(QiblaBackground).padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("DIRECTION OF PRAYER", color = QiblaGold, fontSize = 10.sp, letterSpacing = 2.sp)
-        Text("Qibla Compass", color = QiblaCream, fontSize = 27.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp, bottom = 8.dp))
+        Text("Direction to the Kaaba", color = QiblaCream, fontSize = 27.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp, bottom = 8.dp))
         Text("Point your phone flat and follow the arrow toward the Kaaba.", color = QiblaMuted, fontSize = 13.sp)
         Spacer(Modifier.height(24.dp))
         Box(Modifier.size(238.dp).background(QiblaPanel, CircleShape).padding(12.dp).background(QiblaBackground, CircleShape), contentAlignment = Alignment.Center) {
