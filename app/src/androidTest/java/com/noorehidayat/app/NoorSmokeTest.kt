@@ -39,6 +39,13 @@ class NoorSmokeTest {
     }
 
     @Test
+    fun prayerTimesScreenOpensFromMore() {
+        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNodeWithText("Prayer Times").performClick()
+        composeRule.onNodeWithText("Calculated for your device location").assertIsDisplayed()
+    }
+
+    @Test
     fun discoverOpensVideoLibraryWithLanguageAndTopicFilters() {
         composeRule.onNodeWithText("Discover").performClick()
         composeRule.onNodeWithText("Islamic Dramas").performClick()

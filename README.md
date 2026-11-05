@@ -7,6 +7,9 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Native home dashboard with an emerald, gold and cream visual theme.
 - Quran catalogue with search across surah names, translations and numbers.
 - Surah reader with Uthmani Arabic text, English Sahih International translation and Urdu Jalandhry translation.
+- Tafseer reader that discovers text Tafseer editions from AlQuran Cloud and loads the selected edition by Surah; Urdu editions are prioritised when available.
+- Location-based prayer timetable using the Aladhan service with the Karachi calculation method and Hanafi Asr setting.
+- Qibla compass using the device location and rotation-vector sensor.
 - Surah audio playback through AndroidX Media3 / ExoPlayer using AlQuran Cloud audio, with buffering/error feedback and retry controls.
 - Recitation catalogue.
 - Beginner Quran-learning guidance covering Arabic letters, harakat, makharij, introductory Tajweed topics and revision.
@@ -27,12 +30,14 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 
 - Internet is required for Quran catalogue/reader data, streaming audio, live pages and embedded video.
 - YouTube playback must use the official embedded player. YouTube controls, branding, provider ads, sign-in prompts and regional/age/content restrictions remain under YouTube's control.
-- The in-app video category framework is present, but curated playlist IDs are not yet populated. Do not treat the empty categories as a verified video catalogue.
+- Video categories currently open provider-side YouTube search results; there is no curated or independently verified playlist catalogue in the app yet.
 - Live broadcaster pages are external services and must be tested on real devices and networks.
-- The language preference is saved, but full interface translations are not implemented yet.
+- The app-language preference is saved, but full interface localization is not implemented yet. Quran translation choice is separate.
 - Watch history stores titles only; it is not a full playback-position history.
 - The learning section is introductory guidance and does not replace a qualified Quran/Tajweed teacher.
-- The repository workflow verifies compilation and APK packaging only. It does not perform emulator, device, playback, accessibility, privacy or policy QA.
+- Prayer times depend on location permission, a location fix and the external Aladhan service. Local mosque timetables may use different settings.
+- Tafseer editions and their availability are supplied by AlQuran Cloud; verify religious interpretation with qualified scholars.
+- The repository workflow verifies compilation and runs UI smoke tests on an emulator. It does not replace physical-device, playback, accessibility, privacy or policy QA.
 - The app integrates Google's UMP SDK, but the publisher must still configure applicable privacy messages in AdMob. The app uses Google's official AdMob test App ID and test banner unit ID. Replace these with the app owner's production IDs only after the AdMob account/app setup and policy review are complete. Never ship test IDs as a revenue configuration.
 - Before public distribution, prepare a compliant privacy policy, store listing, content/source review, production AdMob configuration and device QA.
 

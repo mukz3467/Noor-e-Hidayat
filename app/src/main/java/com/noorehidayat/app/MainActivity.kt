@@ -195,7 +195,7 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
   Scaffold(containerColor=Emerald,bottomBar={
    if(page !in listOf("Reader","Media"))Column { NavigationBar(containerColor=Deep){
     listOf("Home","Quran","Discover","More").forEach{p->
-     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live")||(page=="VideoLibrary"&&videoParentPage=="Discover");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings")}
+     val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live")||(page=="VideoLibrary"&&videoParentPage=="Discover");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings","Prayer Times")}
      NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
     }
    }
@@ -203,7 +203,7 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
-    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
+    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=when(page){"Reader"->"Quran";"Tafseer"->"Reader";"Prayer Times"->"More";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";mediaTitle="";mediaUrl="";page="VideoLibrary";search=query})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
