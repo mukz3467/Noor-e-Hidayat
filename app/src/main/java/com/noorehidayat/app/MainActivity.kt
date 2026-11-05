@@ -222,7 +222,7 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
  BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Tafseer"->"Reader";"Prayer Times"->"More";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
   Scaffold(containerColor=Emerald,bottomBar={
-   if(page !in listOf("Reader","Media"))Column { NavigationBar(containerColor=Deep){
+   if(page !in listOf("Reader","Tafseer","Media"))Column { NavigationBar(containerColor=Deep){
     listOf("Home","Quran","Discover","More").forEach{p->
      val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live")||(page=="VideoLibrary"&&videoParentPage=="Discover");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings","Prayer Times")}
      NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
@@ -547,9 +547,11 @@ private val quizData=listOf(
      try{
       val controller=future.get()
       if(!disposed){
-       val metadata=androidx.media3.common.MediaMetadata.Builder().setTitle(title).setArtist("Noor-e-Hidayat").build()
-       controller.setMediaItem(MediaItem.Builder().setUri(url).setMediaMetadata(metadata).build())
-       controller.prepare()
+       if(controller.currentMediaItem?.localConfiguration?.uri?.toString()!=url){
+        val metadata=androidx.media3.common.MediaMetadata.Builder().setTitle(title).setArtist("Noor-e-Hidayat").build()
+        controller.setMediaItem(MediaItem.Builder().setUri(url).setMediaMetadata(metadata).build())
+        controller.prepare()
+       }else if(controller.playbackState==Player.STATE_IDLE)controller.prepare()
        player=controller
        playbackError=""
       }
