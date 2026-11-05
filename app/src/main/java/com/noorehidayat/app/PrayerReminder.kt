@@ -63,6 +63,8 @@ internal object PrayerReminderScheduler {
     }
 
     fun scheduleNextRefresh(context: Context) {
+        val prefs = context.getSharedPreferences("noor_prefs", 0)
+        if (!prefs.getBoolean("prayer_reminders_enabled", false)) return
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val calendar = Calendar.getInstance().apply {
             add(Calendar.DAY_OF_YEAR, 1)
