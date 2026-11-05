@@ -338,19 +338,26 @@ internal fun deleteOfflineSurah(context:Context,number:Int) {
 }
 internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
  val file=offlineSurahAudioFile(context,surah.number)
- if(file.exists()&&file.length()>0L)return false
  val prefs=context.getSharedPreferences("noor_prefs",0)
+ val manager=context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+ if(isOfflineSurahReady(context,surah.number))return false
  val prior=prefs.getLong("offline_download_"+surah.number,-1L)
  if(prior>=0L){
-  val manager=context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-  val query=DownloadManager.Query().setFilterById(prior)
-  manager.query(query).use{cursor->
-   if(cursor.moveToFirst()){
-    val status=cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-    if(status==DownloadManager.STATUS_PENDING||status==DownloadManager.STATUS_RUNNING||status==DownloadManager.STATUS_PAUSED)return false
+  var stillActive=false
+  try{
+   val query=DownloadManager.Query().setFilterById(prior)
+   manager.query(query).use{cursor->
+    if(cursor.moveToFirst()){
+     val status=cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+     stillActive=status==DownloadManager.STATUS_PENDING||status==DownloadManager.STATUS_RUNNING||status==DownloadManager.STATUS_PAUSED
+    }
    }
-  }
+  }catch(_:Exception){}
+  if(stillActive)return false
+  try{manager.remove(prior)}catch(_:Exception){}
  }
+ // A failed or interrupted download can leave a partial file. Remove it before retrying.
+ if(file.exists()&&!file.delete())throw IllegalStateException("Could not clear the incomplete audio file")
  val request=DownloadManager.Request(Uri.parse("https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+surah.number+".mp3"))
   .setTitle("Surah "+surah.english)
   .setDescription("Noor-e-Hidayat · Mishary Alafasy")
@@ -358,7 +365,7 @@ internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
   .setAllowedOverMetered(true)
   .setAllowedOverRoaming(false)
   .setDestinationInExternalFilesDir(context,Environment.DIRECTORY_MUSIC,file.name)
- val id=(context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+ val id=manager.enqueue(request)
  prefs.edit().putLong("offline_download_"+surah.number,id).putString("offline_title_"+surah.number,surah.english).apply()
  return true
 }
