@@ -55,6 +55,7 @@ import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalInspectionMode
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -387,6 +388,7 @@ internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
  val context=LocalContext.current
  var refresh by remember{mutableIntStateOf(0)}
  val saved=remember(data,refresh){data.filter{surah->isOfflineSurahReady(context,surah.number)}}
+ LaunchedEffect(Unit){while(true){delay(1500);refresh++}}
  Base{
   Heading("LISTEN ANYWHERE","Offline audio")
   Text("Downloaded Surah recitations are stored in this app's private music folder and can play without an internet connection.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
@@ -781,7 +783,7 @@ private val quizData=listOf(
     Text(playbackError,color=Gold,fontSize=12.sp)
     TextButton(onClick={if(player!=null){playbackError="";player?.seekTo(0);player?.prepare();player?.playWhenReady=true}else{playbackError="";playbackRetry++}}){Text("Retry audio",color=Gold)}
    }
-   Text("Quran audio streamed from AlQuran Cloud using Media3 ExoPlayer.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
+   Text(if(url.startsWith("file:",true))"Downloaded Quran audio · available offline" else "Quran audio streamed using Media3 ExoPlayer.",color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
   }else{Text("This media link is not supported.",color=Muted)}
  }
 }
