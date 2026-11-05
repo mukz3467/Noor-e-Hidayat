@@ -155,6 +155,7 @@ class PrayerReminderReceiver : BroadcastReceiver() {
 
 class PrayerReminderBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        DailyReminderScheduler.schedule(context)
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try { PrayerReminderScheduler.refreshFromSavedLocation(context) }
