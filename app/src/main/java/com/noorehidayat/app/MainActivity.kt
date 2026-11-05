@@ -1,6 +1,7 @@
 package com.noorehidayat.app
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -137,15 +138,28 @@ private suspend fun getRecitations():List<Recitation> = withContext(Dispatchers.
  }finally{connection.disconnect()}
 }
 private fun recitationUrl(recitation:Recitation,surah:Int)=recitation.server.trimEnd('/')+"/"+surah.toString().padStart(3,'0')+".mp3"
-private suspend fun getSurahs():List<Surah>{
- val j=JSONObject(api("surah"));require(j.optInt("code")==200);val a=j.getJSONArray("data")
+private fun parseSurahCatalogue(raw:String):List<Surah>{
+ val j=JSONObject(raw);require(j.optInt("code")==200);val a=j.getJSONArray("data")
  return (0 until a.length()).map{i->val o=a.getJSONObject(i);Surah(o.getInt("number"),o.getString("name"),o.getString("englishName"),o.getString("englishNameTranslation"),o.getInt("numberOfAyahs"),o.getString("revelationType"))}
 }
-private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
- val safeEdition=if(translationEdition=="ur.jalandhry")"ur.jalandhry" else "en.sahih"
- val j=JSONObject(api("surah/"+n+"/editions/quran-uthmani,"+safeEdition));require(j.optInt("code")==200);val d=j.getJSONArray("data");require(d.length()>=2);val ar=d.getJSONObject(0).getJSONArray("ayahs");val tr=d.getJSONObject(1).getJSONArray("ayahs")
- require(ar.length()==tr.length())
+private suspend fun getSurahs(context:Context):List<Surah>{
+ val prefs=context.getSharedPreferences("noor_prefs",0)
+ return try{val raw=api("surah");prefs.edit().putString("quran_surah_catalogue",raw).apply();parseSurahCatalogue(raw)}
+ catch(error:Exception){val cached=prefs.getString("quran_surah_catalogue",null)?:throw error;parseSurahCatalogue(cached)}
+}
+private fun parseAyahs(raw:String):List<Ayah>{
+ val j=JSONObject(raw);require(j.optInt("code")==200);val d=j.getJSONArray("data");require(d.length()>=2);val ar=d.getJSONObject(0).getJSONArray("ayahs");val tr=d.getJSONObject(1).getJSONArray("ayahs");require(ar.length()==tr.length())
  return (0 until ar.length()).map{i->Ayah(ar.getJSONObject(i).getInt("numberInSurah"),ar.getJSONObject(i).getString("text"),tr.getJSONObject(i).getString("text"))}
+}
+private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):List<Ayah>{
+ val safeEdition=if(translationEdition=="ur.jalandhry")"ur.jalandhry" else "en.sahih"
+ val prefs=context.getSharedPreferences("noor_prefs",0);val key="quran_ayahs_${n}_${safeEdition}"
+ return try{
+  val raw=api("surah/"+n+"/editions/quran-uthmani,"+safeEdition)
+  val order=(prefs.getString("quran_cache_order","")?:"").split(",").filter{it.isNotBlank()&&it!=key}
+  val next=(listOf(key)+order).take(8);val edit=prefs.edit().putString(key,raw).putString("quran_cache_order",next.joinToString(","))
+  (order.drop(7)).forEach{edit.remove(it)};edit.apply();parseAyahs(raw)
+ }catch(error:Exception){val cached=prefs.getString(key,null)?:throw error;parseAyahs(cached)}
 }
 
 @Composable private fun NoorApp(adsAllowed:Boolean,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
@@ -184,11 +198,11 @@ private suspend fun getAyahs(n:Int,translationEdition:String):List<Ayah>{
   lang=prefs.getString("lang","English")?:"English"
   quranTranslation=prefs.getString("quran_translation","en.sahih")?:"en.sahih"
  }
- LaunchedEffect(surahReloadKey){surahLoading=true;catalogueError="";try{surahs=getSurahs()}catch(e:Exception){catalogueError="Quran catalogue unavailable. Check your internet connection and tap Retry."}finally{surahLoading=false}}
+ LaunchedEffect(surahReloadKey){surahLoading=true;catalogueError="";try{surahs=getSurahs(ctx)}catch(e:Exception){catalogueError="Quran catalogue unavailable. Check your internet connection and tap Retry."}finally{surahLoading=false}}
  LaunchedEffect(page){if(page=="Recitations"&&recitations.isEmpty()){recitationsLoading=true;recitationsError="";try{recitations=getRecitations();if(selectedRecitation==null)selectedRecitation=recitations.firstOrNull()}catch(e:Exception){recitationsError="Reciter catalogue unavailable. Check your internet connection and retry."}finally{recitationsLoading=false}}}
  fun openSurah(s:Surah){selected=s;ayahs=emptyList();page="Reader";ayahLoading=true;readerError=""}
  fun openTafseer(s:Surah){tafseerSurah=s;page="Tafseer"}
- LaunchedEffect(selected,page,ayahReloadKey,quranTranslation){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(s.number,quranTranslation)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
+ LaunchedEffect(selected,page,ayahReloadKey,quranTranslation){val s=selected;if(page=="Reader"&&s!=null){ayahLoading=true;readerError="";ayahs=emptyList();try{ayahs=getAyahs(ctx,s.number,quranTranslation)}catch(e:Exception){readerError="Could not load this surah. Check your connection and tap Retry."}finally{ayahLoading=false}}}
  fun openWeb(title:String,url:String){mediaTitle=title;mediaUrl=url;videoId="";page="Media";history=(listOf(title)+history).distinct().take(30);prefs.edit().putString("history",history.joinToString("|")).apply()}
  BackHandler(page!="Home"){page=when(page){"Reader"->"Quran";"Tafseer"->"Reader";"Prayer Times"->"More";"Media"->"Home";"VideoLibrary"->videoParentPage;else->"Home"}}
  MaterialTheme(colorScheme=darkColorScheme(primary=Gold,onPrimary=Emerald,background=Emerald,surface=Deep,onSurface=Cream,secondary=Gold)){
