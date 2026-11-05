@@ -31,6 +31,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -513,7 +514,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
   Text("Choose a language and topic. Noor-e-Hidayat organizes the search; video playback and availability remain provided by YouTube.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
   Spacer(Modifier.height(12.dp))
   Text("LANGUAGE",color=Gold,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
-  LazyRow(horizontalArrangement=Arrangement.spacedBy(7.dp),modifier=Modifier.fillMaxWidth()){
+  LazyRow(horizontalArrangement=Arrangement.spacedBy(7.dp),modifier=Modifier.fillMaxWidth().testTag("video-language-filters")){
    items(languages){item->FilterChip(selected=language==item,onClick={language=item},label={Text(item,fontSize=11.sp)},colors=FilterChipDefaults.filterChipColors(selectedContainerColor=Gold,selectedLabelColor=Emerald,containerColor=Panel,labelColor=Cream))}
   }
   Spacer(Modifier.height(12.dp))

@@ -3,6 +3,9 @@ package com.noorehidayat.app
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import android.location.Location
@@ -89,7 +92,9 @@ class NoorSmokeTest {
         composeRule.onNodeWithText("Urdu").assertIsDisplayed()
         composeRule.onNodeWithText("English").assertIsDisplayed()
         composeRule.onNodeWithText("Arabic").assertIsDisplayed()
+        composeRule.onNodeWithTag("video-language-filters").performScrollToNode(hasText("Hindi"))
         composeRule.onNodeWithText("Hindi").assertIsDisplayed()
+        composeRule.onNodeWithTag("video-language-filters").performScrollToNode(hasText("Bengali"))
         composeRule.onNodeWithText("Bengali").assertIsDisplayed()
         composeRule.onNodeWithText("POPULAR TOPICS").assertIsDisplayed()
         composeRule.onNodeWithText("Tafseer").assertIsDisplayed()
