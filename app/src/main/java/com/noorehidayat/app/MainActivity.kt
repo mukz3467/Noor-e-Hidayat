@@ -445,34 +445,44 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
 }
 
 @Composable private fun LiveScreen(open:(String,String)->Unit){Base{Heading("LIVE BROADCASTS","Makkah & Madinah");Text("Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.",color=Muted,fontSize=13.sp);Spacer(Modifier.height(18.dp));Tile("Masjid al-Haram · Makkah","Official Saudi broadcaster","🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")};Spacer(Modifier.height(12.dp));Tile("Al-Masjid an-Nabawi · Madinah","Official Saudi broadcaster","☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}}}
-@Composable private fun MoreScreen(go:(String)->Unit){Base{Heading("YOUR SPACE","More features");listOf("Favourites","History","Learning","Quiz","Qibla","Prayer Times","Settings").forEach{Tile(it,"Open "+it,"✧"){go(it)};Spacer(Modifier.height(9.dp))}}}
-@Composable private fun LearningScreen(){
+@Composable private fun MoreScreen(go:(String)->Unit){
  Base{
-  Heading("BUILD YOUR SKILLS","Quran learning")
-  Text("A structured beginner path. Learn gradually, practise daily, and study pronunciation with a qualified Quran teacher.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
-  Spacer(Modifier.height(12.dp))
-  val lessons=listOf(
-   Triple("1. Arabic alphabet","Recognise the 28 Arabic letters and their different written forms.","Start by learning each letter's name, shape and basic sound. Practise connecting letters at the beginning, middle and end of words."),
-   Triple("2. Harakat and joining","Learn Fathah, Kasrah, Dammah, Sukoon and Shaddah.","Read short combinations slowly. Focus on the vowel sound and whether a letter is sakin or doubled."),
-   Triple("3. Makharij al-Huruf","Understand where Arabic letters are articulated.","The articulation points include the throat, tongue, lips and nasal passage. Correct pronunciation needs listening to and correction by a qualified teacher."),
-   Triple("4. Noon Sakinah & Tanween","Learn the four core rules: Izhar, Idgham, Iqlab and Ikhfa.","These rules depend on the letter that follows Noon Sakinah or Tanween. Study the letter groups with a qualified teacher and listen to clear recitation examples."),
-   Triple("5. Meem Sakinah","Study Ikhfa Shafawi, Idgham Shafawi and Izhar Shafawi.","The following letter determines the rule: Ba for Ikhfa Shafawi, Meem for Idgham Shafawi, and other letters for Izhar Shafawi. Practise with a teacher."),
-   Triple("6. Madd (elongation)","Understand natural Madd and the main causes of longer elongation.","Natural Madd is commonly taught as two counts. Other Madd types have different durations depending on the rule and recitation tradition; learn them by listening and guided practice."),
-   Triple("7. Qalqalah","Recognise the Qalqalah letters: ق ط ب ج د.","Qalqalah is heard when one of these letters carries Sukoon. Learn the sound without adding a full vowel, and practise the examples with a teacher."),
-   Triple("8. Ghunnah","Learn the nasal sound associated with Noon and Meem in their relevant rules.","Listen carefully to the nasal resonance and practise its duration in examples such as Noon or Meem with Shaddah. A teacher should correct the sound."),
-   Triple("9. Waqf and Ibtida","Learn how to stop and resume recitation while preserving meaning.","Study the common Mushaf stopping symbols and learn where a pause is appropriate. Do not stop at a place that changes the intended meaning."),
-   Triple("10. Daily revision","Build a consistent and realistic practice routine.","Spend 10–15 minutes revising known letters and reading a short passage. Record difficult letters and ask your teacher to correct them.")
-  )
-  lessons.forEach{(title,summary,detail)->
-   Card(Modifier.fillMaxWidth().padding(bottom=10.dp),shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
-    Column(Modifier.padding(15.dp)){
-     Text(title,color=Gold,fontWeight=FontWeight.Bold,fontSize=16.sp)
-     Text(summary,color=Cream,fontSize=13.sp,lineHeight=19.sp,modifier=Modifier.padding(top=6.dp))
-     Text(detail,color=Muted,fontSize=12.sp,lineHeight=18.sp,modifier=Modifier.padding(top=8.dp))
+  Heading("YOUR SPACE","More features")
+  LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(9.dp),contentPadding=PaddingValues(bottom=20.dp)){
+   items(listOf("Favourites","History","Learning","Quiz","Qibla","Prayer Times","Settings")){item->Tile(item,"Open "+item,"✧"){go(item)}}
+  }
+ }
+}
+@Composable private fun LearningScreen(){
+ val lessons=listOf(
+  Triple("1. Arabic alphabet","Recognise the 28 Arabic letters and their different written forms.","Start by learning each letter's name, shape and basic sound. Practise connecting letters at the beginning, middle and end of words."),
+  Triple("2. Harakat and joining","Learn Fathah, Kasrah, Dammah, Sukoon and Shaddah.","Read short combinations slowly. Focus on the vowel sound and whether a letter is sakin or doubled."),
+  Triple("3. Makharij al-Huruf","Understand where Arabic letters are articulated.","The articulation points include the throat, tongue, lips and nasal passage. Correct pronunciation needs listening to and correction by a qualified teacher."),
+  Triple("4. Noon Sakinah & Tanween","Learn the four core rules: Izhar, Idgham, Iqlab and Ikhfa.","These rules depend on the letter that follows Noon Sakinah or Tanween. Study the letter groups with a qualified teacher and listen to clear recitation examples."),
+  Triple("5. Meem Sakinah","Study Ikhfa Shafawi, Idgham Shafawi and Izhar Shafawi.","The following letter determines the rule: Ba for Ikhfa Shafawi, Meem for Idgham Shafawi, and other letters for Izhar Shafawi. Practise with a teacher."),
+  Triple("6. Madd (elongation)","Understand natural Madd and the main causes of longer elongation.","Natural Madd is commonly taught as two counts. Other Madd types have different durations depending on the rule and recitation tradition; learn them by listening and guided practice."),
+  Triple("7. Qalqalah","Recognise the Qalqalah letters: ق ط ب ج د.","Qalqalah is heard when one of these letters carries Sukoon. Learn the sound without adding a full vowel, and practise the examples with a teacher."),
+  Triple("8. Ghunnah","Learn the nasal sound associated with Noon and Meem in their relevant rules.","Listen carefully to the nasal resonance and practise its duration in examples such as Noon or Meem with Shaddah. A teacher should correct the sound."),
+  Triple("9. Waqf and Ibtida","Learn how to stop and resume recitation while preserving meaning.","Study the common Mushaf stopping symbols and learn where a pause is appropriate. Do not stop at a place that changes the intended meaning."),
+  Triple("10. Daily revision","Build a consistent and realistic practice routine.","Spend 10–15 minutes revising known letters and reading a short passage. Record difficult letters and ask your teacher to correct them.")
+ )
+ Base{
+  LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(10.dp),contentPadding=PaddingValues(top=10.dp,bottom=20.dp)){
+   item{
+    Heading("BUILD YOUR SKILLS","Quran learning")
+    Text("A structured beginner path. Learn gradually, practise daily, and study pronunciation with a qualified Quran teacher.",color=Muted,fontSize=13.sp,lineHeight=20.sp)
+   }
+   items(lessons){(title,summary,detail)->
+    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){
+     Column(Modifier.padding(15.dp)){
+      Text(title,color=Gold,fontWeight=FontWeight.Bold,fontSize=16.sp)
+      Text(summary,color=Cream,fontSize=13.sp,lineHeight=19.sp,modifier=Modifier.padding(top=6.dp))
+      Text(detail,color=Muted,fontSize=12.sp,lineHeight=18.sp,modifier=Modifier.padding(top=8.dp))
+     }
     }
    }
+   item{Text("Learning note: This guide is introductory and does not replace a qualified teacher or verified Tajweed instruction.",color=Muted,fontSize=11.sp,lineHeight=16.sp)}
   }
-  Text("Learning note: This guide is introductory and does not replace a qualified teacher or a verified Tajweed lesson.",color=Muted,fontSize=11.sp,lineHeight=16.sp,modifier=Modifier.padding(bottom=20.dp))
  }
 }
 private data class Q(val prompt:String,val options:List<String>,val correctIndex:Int)
@@ -498,8 +508,27 @@ private val quizData=listOf(
  Q("How many Juz are in the Quran?",listOf("20","30","40"),1),
  Q("Which Surah has three verses and is commonly identified as the shortest?",listOf("Al-Kawthar","Al-Asr","Al-Fil"),0)
 )
-@Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].correctIndex)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].correctIndex],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){Base{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted);data.forEach{s->Row(Modifier.fillMaxWidth().padding(vertical=6.dp).background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)};IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}}}}}
-@Composable private fun HistoryScreen(history:List<String>){Base{Heading("YOUR ACTIVITY","Watch history");if(history.isEmpty())Text("No recently played items in this session.",color=Muted);history.forEach{Text(it,color=Cream,modifier=Modifier.fillMaxWidth().padding(12.dp).background(Panel,RoundedCornerShape(10.dp)).padding(10.dp))}}}
+@Composable private fun QuizScreen(index:Int,score:Int,answer:Int,choose:(Int)->Unit,next:()->Unit){Base{Heading("KNOWLEDGE CHECK","Islamic quiz");if(index>=quizData.size){Text("Quiz completed",color=Gold,fontSize=20.sp,fontWeight=FontWeight.Bold);Text("Your score: $score / "+quizData.size,color=Cream,fontSize=18.sp,modifier=Modifier.padding(vertical=18.dp));Button(next,Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Play again")}}else{Text("Question "+(index+1)+" of "+quizData.size+" · Score "+score,color=Muted);Spacer(Modifier.height(18.dp));Text(quizData[index].prompt,color=Cream,fontSize=20.sp,fontWeight=FontWeight.SemiBold);Spacer(Modifier.height(14.dp));quizData[index].options.forEachIndexed{i,o->Button({choose(i)},Modifier.fillMaxWidth().padding(bottom=8.dp),enabled=answer<0,colors=ButtonDefaults.buttonColors(containerColor=if(answer==i)Gold else Panel,contentColor=if(answer==i)Emerald else Cream)){Text(o)}};if(answer>=0)Text(if(answer==quizData[index].correctIndex)"Correct answer." else "Correct answer: "+quizData[index].options[quizData[index].correctIndex],color=Gold,modifier=Modifier.padding(12.dp));Button(next,Modifier.fillMaxWidth(),enabled=answer>=0,colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text(if(index==quizData.lastIndex)"Finish quiz" else "Next question")}}}}@Composable private fun FavouritesScreen(data:List<Surah>,open:(Surah)->Unit,toggle:(Surah)->Unit){
+ Base{
+  LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(bottom=20.dp)){
+   item{Heading("YOUR LIBRARY","Favourites");if(data.isEmpty())Text("No favourites saved yet.",color=Muted)}
+   items(data){s->
+    Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).clickable{open(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){
+     Column(Modifier.weight(1f)){Text(s.english,color=Cream);Text(s.meaning,color=Muted,fontSize=11.sp)}
+     IconButton({toggle(s)}){Icon(Icons.Default.Favorite,contentDescription="Remove",tint=Gold)}
+    }
+   }
+  }
+ }
+}
+@Composable private fun HistoryScreen(history:List<String>){
+ Base{
+  LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(bottom=20.dp)){
+   item{Heading("YOUR ACTIVITY","Watch history");if(history.isEmpty())Text("No recently played items yet.",color=Muted)}
+   items(history){title->Text(title,color=Cream,modifier=Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(10.dp)).padding(12.dp))}
+  }
+ }
+}
 @Composable private fun SettingsScreen(lang:String,change:(String)->Unit,translationEdition:String,changeTranslation:(String)->Unit,editions:List<QuranTranslationEdition>,loading:Boolean,error:String,retry:()->Unit,privacyOptionsRequired:Boolean,onPrivacyOptions:()->Unit){
  var expanded by remember{mutableStateOf(false)}
  Base{
