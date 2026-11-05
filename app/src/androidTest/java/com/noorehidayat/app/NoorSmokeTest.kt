@@ -39,6 +39,14 @@ class NoorSmokeTest {
     }
 
     @Test
+    fun qiblaBearingUsesGreatCircleDirection() {
+        val atKaaba = calculateQiblaBearing(21.4225, 39.8262)
+        val fromFaisalabad = calculateQiblaBearing(31.418, 73.079)
+        assert(kotlin.math.abs(atKaaba) < 0.01f)
+        assert(kotlin.math.abs(fromFaisalabad - 259.55f) < 0.5f)
+    }
+
+    @Test
     fun prayerTimesScreenOpensFromMore() {
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("Prayer Times").performClick()
