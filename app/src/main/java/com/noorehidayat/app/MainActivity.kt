@@ -74,6 +74,7 @@ private val Gold=Color(0xFFE7C879)
 private val Cream=Color(0xFFFFF4DE)
 private val Muted=Color(0xFFB7C9BC)
 private val Border=Color(0xFF355B45)
+private fun localized(lang:String,english:String,urdu:String)=if(lang=="اردو")urdu else english
 data class Surah(val number:Int,val name:String,val english:String,val meaning:String,val ayahs:Int,val type:String)
 data class Ayah(val number:Int,val arabic:String,val translation:String)
 data class Recitation(val reciter:String,val style:String,val server:String,val surahs:Set<Int>){val label get()="$reciter · $style"}
@@ -253,16 +254,16 @@ internal fun resolveBackPage(page:String,mediaParentPage:String,videoParentPage:
    if(page !in listOf("Reader","Tafseer","Media"))Column { NavigationBar(containerColor=Deep){
     listOf("Home","Quran","Discover","More").forEach{p->
      val selectedTab=when(p){"Home"->page=="Home";"Quran"->page=="Quran";"Discover"->page in listOf("Discover","Recitations","Lectures","Live")||(page=="VideoLibrary"&&videoParentPage=="Discover");else->page in listOf("More","Learning","Quiz","Favourites","History","Settings","Prayer Times","Offline Audio")}
-     NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(p,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
+     NavigationBarItem(selected=selectedTab,onClick={page=when(p){"Discover"->"Discover";"More"->"More";else->p}},icon={Icon(when(p){"Home"->Icons.Default.Home;"Quran"->Icons.Default.MenuBook;"Discover"->Icons.Default.Explore;else->Icons.Default.GridView},null)},label={Text(localized(lang,p,when(p){"Home"->"صفحہ اول";"Quran"->"قرآن";"Discover"->"دریافت";else->"مزید"}),fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Gold,selectedTextColor=Gold,indicatorColor=Panel,unselectedIconColor=Muted,unselectedTextColor=Muted))
     }
    }
     if(adsAllowed)AdMobBanner()
    }
   }){pad->
    Column(Modifier.fillMaxSize().padding(pad)){
-    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=resolveBackPage(page,mediaParentPage,videoParentPage)}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
+    if(page!="Home")Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick={page=resolveBackPage(page,mediaParentPage,videoParentPage)}){Icon(Icons.Default.ArrowBack,null,tint=Gold)};Text(pageTitle(page,selected,mediaTitle,lang),color=Cream,fontSize=19.sp,fontWeight=FontWeight.SemiBold)}
     when(page){
-     "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";mediaTitle="";mediaUrl="";page="VideoLibrary";search=query})
+     "Home"->HomeScreen(lang,{page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";mediaTitle="";mediaUrl="";page="VideoLibrary";search=query})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
      "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,translationEditions.firstOrNull{it.id==quranTranslation}?.name?:if(quranTranslation=="ur.jalandhry")"اردو ترجمہ" else "Sahih International",translationEditions.firstOrNull{it.id==quranTranslation}?.direction=="rtl"||quranTranslation.startsWith("ur.")||quranTranslation.startsWith("ar."),favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++},{s->openTafseer(s)},{surah->
        try{
@@ -273,11 +274,11 @@ internal fun resolveBackPage(page:String,mediaParentPage:String,videoParentPage:
      "Tafseer"->TafseerScreen(tafseerSurah)
      "Prayer Times"->PrayerTimesScreen()
      "Offline Audio"->OfflineAudioScreen(surahs,{surah->openWeb(surah.english+" · Offline audio",offlineSurahAudioUri(ctx,surah.number))},{surah->deleteOfflineSurah(ctx,surah.number)})
-     "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
+     "Discover"->DiscoverScreen(lang){category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
      "Recitations"->RecitationsScreen(surahs,recitations,selectedRecitation,recitationsLoading,recitationsError,{selectedRecitation=it},{recitation,s->openWeb(s.english+" · "+recitation.reciter,recitationUrl(recitation,s.number))},{recitations=emptyList();selectedRecitation=null})
      "Lectures"->CategoryScreen("Islamic Lectures",listOf("Quran and Sunnah","Seerah of Prophet Muhammad","Islamic manners and character","Family and daily life","Stories of the Prophets","Islamic history")){videoParentPage="Lectures";videoCategory=it;page="VideoLibrary"}
-     "Live"->LiveScreen{t,u->openWeb(t,u)}
-     "More"->MoreScreen{page=it}
+     "Live"->LiveScreen(lang){t,u->openWeb(t,u)}
+     "More"->MoreScreen(lang){page=it}
      "Learning"->LearningScreen()
      "Quiz"->QuizScreen(quizIndex,quizScore,quizAnswer,{a->if(quizIndex<quizData.size&&quizAnswer==-1){if(a==quizData[quizIndex].correctIndex)quizScore++;quizAnswer=a}},{if(quizIndex>=quizData.size){quizIndex=0;quizScore=0}else{quizIndex++};quizAnswer=-1})
      "Qibla"->QiblaScreen()
@@ -286,41 +287,41 @@ internal fun resolveBackPage(page:String,mediaParentPage:String,videoParentPage:
      "Settings"->SettingsScreen(lang,{lang=it;prefs.edit().putString("lang",it).apply()},quranTranslation,{edition->quranTranslation=edition;prefs.edit().putString("quran_translation",edition).apply();ayahReloadKey++},translationEditions,translationsLoading,translationsError,{translationReloadKey++},dailyReminderEnabled,{enabled->dailyReminderEnabled=enabled;prefs.edit().putBoolean("daily_reminder_enabled",enabled).apply();if(enabled)DailyReminderScheduler.schedule(ctx)else DailyReminderScheduler.cancel(ctx)},privacyOptionsRequired,onPrivacyOptions)
      "VideoLibrary"->VideoLibraryScreen(videoCategory,search){target->if(target.startsWith("https://"))openWeb(videoCategory,target)else if(target.isNotBlank())openWeb(videoCategory,"https://www.youtube-nocookie.com/embed/videoseries?list="+target+"&playsinline=1")}
      "Media"->MediaScreen(mediaTitle,mediaUrl,videoId)
-     else->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";search=query;page="VideoLibrary"})
+     else->HomeScreen(lang,{page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";search=query;page="VideoLibrary"})
     }
    }
   }
  }
 }
-private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:"Quran";"Media"->t;"VideoLibrary"->"Video Library";"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";"Qibla"->"Qibla Compass";"Tafseer"->"Tafseer";"Prayer Times"->"Prayer Times";"Offline Audio"->"Offline Audio";else->p}
+private fun pageTitle(p:String,s:Surah?,t:String,lang:String)=localized(lang,when(p){"Reader"->s?.english?:"Quran";"Media"->t;"VideoLibrary"->"Video Library";"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";"Qibla"->"Qibla Compass";"Tafseer"->"Tafseer";"Prayer Times"->"Prayer Times";"Offline Audio"->"Offline Audio";else->p},when(p){"Home"->"صفحہ اول";"Quran"->"قرآن پاک";"Reader"->s?.english?:"قرآن";"Media"->t;"VideoLibrary"->"ویڈیو لائبریری";"Recitations"->"قرآن کی تلاوت";"Lectures"->"اسلامی بیانات";"Live"->"مکہ اور مدینہ";"Learning"->"قرآن سیکھیں";"Quiz"->"اسلامی کوئز";"Favourites"->"پسندیدہ";"History"->"دیکھی گئی ویڈیوز";"Settings"->"ترتیبات";"Qibla"->"قبلہ کی سمت";"Tafseer"->"تفسیر";"Prayer Times"->"نماز کے اوقات";"Offline Audio"->"آف لائن آڈیو";else->p})
 
 @Composable private fun Base(content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().background(Emerald).padding(horizontal=18.dp),content=content)}
 @Composable private fun Heading(kicker:String,title:String){Text(kicker.uppercase(),color=Gold,fontSize=10.sp,letterSpacing=2.sp);Text(title,color=Cream,fontSize=27.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=5.dp,bottom=14.dp))}
 @Composable private fun Tile(title:String,sub:String,symbol:String,click:()->Unit){Card(Modifier.clickable{click()},shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Border)){Column(Modifier.fillMaxWidth().padding(15.dp)){Text(symbol,color=Gold,fontSize=25.sp);Spacer(Modifier.height(10.dp));Text(title,color=Cream,fontWeight=FontWeight.SemiBold);Text(sub,color=Muted,fontSize=11.sp,modifier=Modifier.padding(top=4.dp))}}}
-@Composable private fun HomeScreen(q:()->Unit,r:()->Unit,l:()->Unit,live:()->Unit,learn:()->Unit,quiz:()->Unit,more:()->Unit,searchVideos:(String)->Unit){
+@Composable private fun HomeScreen(lang:String,q:()->Unit,r:()->Unit,l:()->Unit,live:()->Unit,learn:()->Unit,quiz:()->Unit,more:()->Unit,searchVideos:(String)->Unit){
  var homeQuery by remember{mutableStateOf("")}
  Base{
   Column(Modifier.fillMaxWidth().padding(top=14.dp,bottom=12.dp),horizontalAlignment=Alignment.CenterHorizontally){
    Text("☾",fontSize=38.sp,color=Gold)
    Text("NOOR-E-HIDAYAT",fontSize=25.sp,fontWeight=FontWeight.Bold,color=Gold,letterSpacing=2.sp)
-   Text("LEARN · WATCH · PEACE",fontSize=10.sp,color=Muted,letterSpacing=2.sp)
+   Text(localized(lang,"LEARN · WATCH · PEACE","سیکھیں · دیکھیں · سکون"),fontSize=10.sp,color=Muted,letterSpacing=2.sp)
   }
-  OutlinedTextField(value=homeQuery,onValueChange={homeQuery=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text("Search Quran, Surah or Islamic videos…",color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},trailingIcon={IconButton(onClick={searchVideos(homeQuery)}){Icon(Icons.Default.ArrowForward,null,tint=Gold)}},colors=fieldColors())
+  OutlinedTextField(value=homeQuery,onValueChange={homeQuery=it},modifier=Modifier.fillMaxWidth(),singleLine=true,placeholder={Text(localized(lang,"Search Quran, Surah or Islamic videos…","قرآن، سورت یا اسلامی ویڈیوز تلاش کریں…"),color=Muted)},leadingIcon={Icon(Icons.Default.Search,null,tint=Gold)},trailingIcon={IconButton(onClick={searchVideos(homeQuery)}){Icon(Icons.Default.ArrowForward,null,tint=Gold)}},colors=fieldColors())
   Spacer(Modifier.height(14.dp))
   androidx.compose.foundation.lazy.grid.LazyVerticalGrid(columns=androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),modifier=Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(9.dp),verticalArrangement=Arrangement.spacedBy(9.dp),contentPadding=PaddingValues(bottom=12.dp)){
-   item{Tile("Quran Tilawat","With translation","📖",q)}
-   item{Tile("Beautiful Recitations","Listen & reflect","♫",r)}
-   item{Tile("Islamic Lectures","Urdu · English","◉",l)}
-   item{Tile("Makkah & Madinah","Live streams","🕋",live)}
-   item{Tile("Daily Islamic Videos","Watch & learn","▶", {searchVideos("Islamic reminders")})}
-   item{Tile("More Categories","Explore topics","▦",more)}
+   item{Tile(localized(lang,"Quran Tilawat","قرآن کی تلاوت"),localized(lang,"With translation","ترجمے کے ساتھ"),"📖",q)}
+   item{Tile(localized(lang,"Beautiful Recitations","خوبصورت تلاوتیں"),localized(lang,"Listen & reflect","سنیں اور غور کریں"),"♫",r)}
+   item{Tile(localized(lang,"Islamic Lectures","اسلامی بیانات"),localized(lang,"Urdu · English","اردو · انگریزی"),"◉",l)}
+   item{Tile(localized(lang,"Makkah & Madinah","مکہ اور مدینہ"),localized(lang,"Live streams","براہ راست نشریات"),"🕋",live)}
+   item{Tile(localized(lang,"Daily Islamic Videos","روزانہ اسلامی ویڈیوز"),localized(lang,"Watch & learn","دیکھیں اور سیکھیں"),"▶", {searchVideos("Islamic reminders")})}
+   item{Tile(localized(lang,"More Categories","مزید موضوعات"),localized(lang,"Explore topics","موضوعات دیکھیں"),"▦",more)}
   }
   Card(Modifier.fillMaxWidth().padding(bottom=10.dp),shape=RoundedCornerShape(16.dp),colors=CardDefaults.cardColors(containerColor=Panel),border=BorderStroke(1.dp,Gold.copy(alpha=.35f))){
    Row(Modifier.fillMaxWidth().padding(13.dp),verticalAlignment=Alignment.CenterVertically){
     Text("🕌",fontSize=30.sp)
     Column(Modifier.weight(1f).padding(start=12.dp)){
-     Text("DAILY REMINDER",color=Gold,fontSize=10.sp,letterSpacing=1.sp)
-     Text("Indeed, in the remembrance of Allah do hearts find peace.",color=Cream,fontSize=13.sp,lineHeight=18.sp)
+     Text(localized(lang,"DAILY REMINDER","روزانہ یاددہانی"),color=Gold,fontSize=10.sp,letterSpacing=1.sp)
+     Text(localized(lang,"Indeed, in the remembrance of Allah do hearts find peace.","بے شک اللہ کے ذکر سے دلوں کو اطمینان ملتا ہے۔"),color=Cream,fontSize=13.sp,lineHeight=18.sp)
      Text("Quran · 13:28",color=Muted,fontSize=10.sp)
     }
    }
@@ -452,7 +453,7 @@ internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
   }
  }
 }
-@Composable private fun DiscoverScreen(open:(String)->Unit){
+@Composable private fun DiscoverScreen(lang:String,open:(String)->Unit){
  val categories=listOf(
   "Quran Recitations" to "Full-surah audio and Quran listening",
   "Islamic Lectures" to "Talks on faith, character and daily life",
@@ -463,8 +464,8 @@ internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
   "Kids & Family" to "Family-friendly Islamic learning"
  )
  Base{
-  Heading("DISCOVER","Islamic content")
-  Text("Browse by category. Only verified, embeddable collections will be published here; unavailable collections are clearly marked.",color=Muted,fontSize=13.sp,lineHeight=19.sp)
+  Heading(localized(lang,"DISCOVER","دریافت کریں"),localized(lang,"Islamic content","اسلامی مواد"))
+  Text(localized(lang,"Browse by category. Videos open from YouTube; availability and playback are controlled by YouTube.","موضوعات کے لحاظ سے مواد دیکھیں۔ ویڈیوز یوٹیوب سے کھلیں گی؛ دستیابی اور پلے بیک یوٹیوب کے کنٹرول میں ہیں۔"),color=Muted,fontSize=13.sp,lineHeight=19.sp)
   Spacer(Modifier.height(12.dp))
   LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp),contentPadding=PaddingValues(bottom=22.dp)){
    items(categories){(name,description)->
@@ -556,12 +557,12 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
  }
 }
 
-@Composable private fun LiveScreen(open:(String,String)->Unit){Base{Heading("LIVE BROADCASTS","Makkah & Madinah");Text("Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.",color=Muted,fontSize=13.sp);Spacer(Modifier.height(18.dp));Tile("Masjid al-Haram · Makkah","Official Saudi broadcaster","🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")};Spacer(Modifier.height(12.dp));Tile("Al-Masjid an-Nabawi · Madinah","Official Saudi broadcaster","☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}}}
-@Composable private fun MoreScreen(go:(String)->Unit){
+@Composable private fun LiveScreen(lang:String,open:(String,String)->Unit){Base{Heading(localized(lang,"LIVE BROADCASTS","براہ راست نشریات"),localized(lang,"Makkah & Madinah","مکہ اور مدینہ"));Text("Official broadcaster pages open inside the app. Stream availability is controlled by the broadcaster.",color=Muted,fontSize=13.sp);Spacer(Modifier.height(18.dp));Tile("Masjid al-Haram · Makkah","Official Saudi broadcaster","🕋"){open("Makkah Live","https://www.mcs.org.sa/_LiveMekka")};Spacer(Modifier.height(12.dp));Tile("Al-Masjid an-Nabawi · Madinah","Official Saudi broadcaster","☾"){open("Madinah Live","https://www.mcs.org.sa/_LiveMadina")}}}
+@Composable private fun MoreScreen(lang:String,go:(String)->Unit){
  Base{
-  Heading("YOUR SPACE","More features")
+  Heading(localized(lang,"YOUR SPACE","آپ کی جگہ"),localized(lang,"More features","مزید سہولیات"))
   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(9.dp),contentPadding=PaddingValues(bottom=20.dp)){
-   items(listOf("Learning","Quiz","Qibla","Prayer Times","Offline Audio","Favourites","History","Settings")){item->Tile(item,"Open "+item,"✧"){go(item)}}
+   items(listOf("Learning","Quiz","Qibla","Prayer Times","Offline Audio","Favourites","History","Settings")){item->Tile(localized(lang,item,when(item){"Learning"->"قرآن سیکھیں";"Quiz"->"اسلامی کوئز";"Qibla"->"قبلہ کی سمت";"Prayer Times"->"نماز کے اوقات";"Offline Audio"->"آف لائن آڈیو";"Favourites"->"پسندیدہ";"History"->"سرگرمی کی تاریخ";else->"ترتیبات"}),localized(lang,"Open "+item,when(item){"Learning"->"سبق کھولیں";"Quiz"->"کوئز کھولیں";"Qibla"->"قبلہ دیکھیں";"Prayer Times"->"نماز کے اوقات دیکھیں";"Offline Audio"->"محفوظ آڈیو سنیں";"Favourites"->"محفوظ سورتیں";"History"->"پچھلی سرگرمی";else->"ترتیبات کھولیں"}),"✧"){go(item)}}
   }
  }
 }
@@ -647,23 +648,23 @@ private val quizData=listOf(
  val notificationPermissionLauncher=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->if(granted)onDailyReminderChange(true)}
  Base{
   Heading("PREFERENCES","Settings")
-  Text("App language preference",color=Gold)
+  Text(localized(lang,"App language preference","ایپ کی زبان"),color=Gold)
   listOf("English","اردو","العربية","Bahasa Indonesia","Türkçe","Français").forEach{Row(Modifier.fillMaxWidth().clickable{change(it)}.padding(vertical=13.dp),verticalAlignment=Alignment.CenterVertically){Text(it,color=Cream,modifier=Modifier.weight(1f));if(lang==it)Icon(Icons.Default.Check,null,tint=Gold)};Divider(color=Border)}
   Spacer(Modifier.height(18.dp))
   Spacer(Modifier.height(12.dp))
   Row(Modifier.fillMaxWidth().padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
    Column(Modifier.weight(1f)){
-    Text("Daily Islamic reminder",color=Gold,fontWeight=FontWeight.SemiBold)
-    Text("A gentle daily prompt for Quran recitation, dhikr and reflection. No quoted Hadith or unsourced religious text.",color=Muted,fontSize=11.sp,lineHeight=16.sp)
+    Text(localized(lang,"Daily Islamic reminder","روزانہ اسلامی یاددہانی"),color=Gold,fontWeight=FontWeight.SemiBold)
+    Text(localized(lang,"A gentle daily prompt for Quran recitation, dhikr and reflection. No quoted Hadith or unsourced religious text.","قرآن کی تلاوت، ذکر اور غوروفکر کی روزانہ یاددہانی۔ غیر مصدقہ حدیث یا دینی عبارت استعمال نہیں ہوتی۔"),color=Muted,fontSize=11.sp,lineHeight=16.sp)
    }
    Switch(checked=dailyReminderEnabled,onCheckedChange={enabled->
     if(enabled&&Build.VERSION.SDK_INT>=33&&context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)}
     else onDailyReminderChange(enabled)
    })
   }
-  Text("When enabled, a reminder is scheduled for 9:00 AM local time. Android battery settings may delay it.",color=Muted,fontSize=10.sp,lineHeight=15.sp)
+  Text(localized(lang,"When enabled, a reminder is scheduled for 9:00 AM local time. Android battery settings may delay it.","فعال ہونے پر روزانہ مقامی وقت کے مطابق صبح 9 بجے یاددہانی ہوگی۔ فون کی بیٹری سیٹنگ اسے مؤخر کر سکتی ہے۔"),color=Muted,fontSize=10.sp,lineHeight=15.sp)
   Spacer(Modifier.height(14.dp))
-  Text("Quran translation",color=Gold)
+  Text(localized(lang,"Quran translation","قرآن کا ترجمہ"),color=Gold)
   Box{
    OutlinedButton(onClick={expanded=true},modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.outlinedButtonColors(contentColor=Gold)){
     Text(editions.firstOrNull{it.id==translationEdition}?.let{"${it.name} · ${it.language.uppercase()}"}?:translationEdition,modifier=Modifier.weight(1f),maxLines=2)
@@ -675,7 +676,7 @@ private val quizData=listOf(
   }
   if(loading)LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=8.dp),color=Gold)
   if(error.isNotBlank()){Text(error,color=Gold,fontSize=12.sp,modifier=Modifier.padding(top=8.dp));TextButton(onClick=retry){Text("Retry translations",color=Gold)}}
-  Text("Choose from text translation editions published by AlQuran Cloud. The app interface language preference is saved separately; full interface localization is not yet implemented.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp))
+  Text(localized(lang,"Choose a translation edition from AlQuran Cloud. Some learning and external content remains in its original language.","AlQuran Cloud سے ترجمے کا نسخہ منتخب کریں۔ کچھ تعلیمی اور بیرونی مواد اپنی اصل زبان میں رہے گا۔"),color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=14.dp))
   if(privacyOptionsRequired){Spacer(Modifier.height(18.dp));Button(onClick=onPrivacyOptions,modifier=Modifier.fillMaxWidth(),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Text("Privacy options")}}
  }
 }
