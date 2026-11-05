@@ -449,7 +449,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
  Base{
   Heading("YOUR SPACE","More features")
   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(9.dp),contentPadding=PaddingValues(bottom=20.dp)){
-   items(listOf("Favourites","History","Learning","Quiz","Qibla","Prayer Times","Settings")){item->Tile(item,"Open "+item,"✧"){go(item)}}
+   items(listOf("Learning","Quiz","Qibla","Prayer Times","Favourites","History","Settings")){item->Tile(item,"Open "+item,"✧"){go(item)}}
   }
  }
 }
