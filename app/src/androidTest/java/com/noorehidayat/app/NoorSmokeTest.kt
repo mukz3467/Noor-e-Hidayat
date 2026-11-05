@@ -31,6 +31,14 @@ class NoorSmokeTest {
     }
 
     @Test
+    fun qiblaCompassOpensAndRequestsLocationOnlyWhenNeeded() {
+        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNodeWithText("Qibla").performClick()
+        composeRule.onNodeWithText("Qibla Compass").assertIsDisplayed()
+        composeRule.onNodeWithText("Find Qibla direction").assertIsDisplayed()
+    }
+
+    @Test
     fun discoverOpensVideoLibraryWithLanguageAndTopicFilters() {
         composeRule.onNodeWithText("Discover").performClick()
         composeRule.onNodeWithText("Islamic Dramas").performClick()
