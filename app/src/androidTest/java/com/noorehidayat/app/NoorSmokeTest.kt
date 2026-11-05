@@ -48,6 +48,15 @@ class NoorSmokeTest {
     }
 
     @Test
+    fun offlineAudioLibraryOpensFromMore() {
+        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNodeWithText("Offline Audio").performClick()
+        composeRule.onNodeWithText("Offline audio").assertIsDisplayed()
+        composeRule.onNodeWithText("No audio downloaded yet. Open a Surah and tap Save audio.")
+            .assertIsDisplayed()
+    }
+
+    @Test
     fun prayerTimesScreenOpensFromMore() {
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("Prayer Times").performClick()
