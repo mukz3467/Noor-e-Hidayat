@@ -2,6 +2,11 @@ package com.noorehidayat.app
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.app.DownloadManager
+import android.net.Uri
+import android.os.Environment
+import android.widget.Toast
+import java.io.File
 import android.content.ComponentName
 import android.os.Bundle
 import android.webkit.WebChromeClient
@@ -236,7 +241,12 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
     when(page){
      "Home"->HomeScreen({page="Quran"},{page="Recitations"},{page="Lectures"},{page="Live"},{page="Learning"},{page="Quiz"},{page="More"},{query->videoCategory="Islamic Videos";videoParentPage="Home";mediaTitle="";mediaUrl="";page="VideoLibrary";search=query})
      "Quran"->QuranScreen(surahs,surahLoading,catalogueError,search,{search=it},{openSurah(it)},{surahReloadKey++})
-     "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,translationEditions.firstOrNull{it.id==quranTranslation}?.name?:if(quranTranslation=="ur.jalandhry")"اردو ترجمہ" else "Sahih International",translationEditions.firstOrNull{it.id==quranTranslation}?.direction=="rtl"||quranTranslation.startsWith("ur.")||quranTranslation.startsWith("ar."),favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++},{s->openTafseer(s)})
+     "Reader"->ReaderScreen(selected,ayahs,ayahLoading,readerError,translationEditions.firstOrNull{it.id==quranTranslation}?.name?:if(quranTranslation=="ur.jalandhry")"اردو ترجمہ" else "Sahih International",translationEditions.firstOrNull{it.id==quranTranslation}?.direction=="rtl"||quranTranslation.startsWith("ur.")||quranTranslation.startsWith("ar."),favs.contains(selected?.number),{s->favs=if(favs.contains(s.number))favs-s.number else favs+s.number;prefs.edit().putStringSet("favs",favs.map{it.toString()}.toSet()).apply()},{s->openWeb(s.english+" · Mishary Alafasy","https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+s.number+".mp3")},{ayahReloadKey++},{s->openTafseer(s)},{surah->
+       try{
+        val queued=enqueueOfflineSurah(ctx,surah)
+        Toast.makeText(ctx,if(queued)"Download started for "+surah.english else "Audio is already downloaded or downloading",Toast.LENGTH_LONG).show()
+       }catch(e:Exception){Toast.makeText(ctx,"Could not start audio download. Check storage space and internet.",Toast.LENGTH_LONG).show()}
+      })
      "Tafseer"->TafseerScreen(tafseerSurah)
      "Prayer Times"->PrayerTimesScreen()
      "Discover"->DiscoverScreen{category->videoParentPage="Discover";videoCategory=category;page="VideoLibrary"}
@@ -258,7 +268,7 @@ private suspend fun getAyahs(context:Context,n:Int,translationEdition:String):Li
   }
  }
 }
-private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:"Quran";"Media"->t;"VideoLibrary"->"Video Library";"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";"Qibla"->"Qibla Compass";"Tafseer"->"Tafseer";"Prayer Times"->"Prayer Times";else->p}
+private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:"Quran";"Media"->t;"VideoLibrary"->"Video Library";"Quran"->"The Holy Quran";"Recitations"->"Beautiful Recitations";"Lectures"->"Islamic Lectures";"Live"->"Makkah & Madinah";"Learning"->"Quran Learning";"Quiz"->"Islamic Quiz";"Favourites"->"Favourites";"History"->"Watch History";"Settings"->"Settings";"Qibla"->"Qibla Compass";"Tafseer"->"Tafseer";"Prayer Times"->"Prayer Times";"Offline Audio"->"Offline Audio";else->p}
 
 @Composable private fun Base(content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().background(Emerald).padding(horizontal=18.dp),content=content)}
 @Composable private fun Heading(kicker:String,title:String){Text(kicker.uppercase(),color=Gold,fontSize=10.sp,letterSpacing=2.sp);Text(title,color=Cream,fontSize=27.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Serif,modifier=Modifier.padding(top=5.dp,bottom=14.dp))}
@@ -300,8 +310,59 @@ private fun pageTitle(p:String,s:Surah?,t:String)=when(p){"Reader"->s?.english?:
  LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=10.dp,bottom=22.dp)){items(data.filter{search.isBlank()||it.english.contains(search,true)||it.meaning.contains(search,true)||it.number.toString()==search||it.name.contains(search)}){s->Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(14.dp)).clickable{onOpen(s)}.padding(13.dp),verticalAlignment=Alignment.CenterVertically){Box(Modifier.size(40.dp).background(Emerald,RoundedCornerShape(10.dp)),contentAlignment=Alignment.Center){Text(s.number.toString(),color=Gold,fontWeight=FontWeight.Bold)};Column(Modifier.weight(1f).padding(start=12.dp)){Text(s.english,color=Cream,fontWeight=FontWeight.SemiBold);Text(s.meaning+" · "+s.ayahs+" Ayahs · "+s.type,color=Muted,fontSize=11.sp)};Text(s.name,color=Gold,fontSize=19.sp)}}}
  }
 }
-@Composable private fun ReaderScreen(s:Surah?,data:List<Ayah>,loading:Boolean,error:String,translationLabel:String,translationRtl:Boolean,isFav:Boolean,toggleFav:(Surah)->Unit,audio:(Surah)->Unit,retry:()->Unit,openTafseer:(Surah)->Unit){
- Base{if(s==null)return@Base;Heading("SURAH "+s.number+" · "+s.type,s.english);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=12.sp);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={toggleFav(s)}){Icon(if(isFav)Icons.Default.Favorite else Icons.Default.FavoriteBorder,null,tint=Gold);Text(if(isFav)" Saved" else " Save",color=Gold)};TextButton(onClick={openTafseer(s)}){Text("Tafseer",color=Gold)};Spacer(Modifier.weight(1f));Button({audio(s)},Modifier.padding(vertical=10.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("  Listen · Mishary Alafasy")}}
+internal fun offlineSurahAudioFile(context:Context,number:Int):File {
+ val root=context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)?:File(context.filesDir,"music")
+ if(!root.exists())root.mkdirs()
+ return File(root,"noor-surah-$number.mp3")
+}
+internal fun offlineSurahAudioUri(context:Context,number:Int):String = Uri.fromFile(offlineSurahAudioFile(context,number)).toString()
+internal fun enqueueOfflineSurah(context:Context,surah:Surah):Boolean {
+ val file=offlineSurahAudioFile(context,surah.number)
+ if(file.exists()&&file.length()>0L)return false
+ val prefs=context.getSharedPreferences("noor_prefs",0)
+ val prior=prefs.getLong("offline_download_"+surah.number,-1L)
+ if(prior>=0L){
+  val manager=context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+  val query=DownloadManager.Query().setFilterById(prior)
+  manager.query(query).use{cursor->
+   if(cursor.moveToFirst()){
+    val status=cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+    if(status==DownloadManager.STATUS_PENDING||status==DownloadManager.STATUS_RUNNING||status==DownloadManager.STATUS_PAUSED)return false
+   }
+  }
+ }
+ val request=DownloadManager.Request(Uri.parse("https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/"+surah.number+".mp3"))
+  .setTitle("Surah "+surah.english)
+  .setDescription("Noor-e-Hidayat · Mishary Alafasy")
+  .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+  .setAllowedOverMetered(true)
+  .setAllowedOverRoaming(false)
+  .setDestinationInExternalFilesDir(context,Environment.DIRECTORY_MUSIC,file.name)
+ val id=(context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+ prefs.edit().putLong("offline_download_"+surah.number,id).putString("offline_title_"+surah.number,surah.english).apply()
+ return true
+}
+@Composable private fun OfflineAudioScreen(data:List<Surah>,play:(Surah)->Unit,remove:(Surah)->Unit){
+ val context=LocalContext.current
+ var refresh by remember{mutableIntStateOf(0)}
+ val saved=remember(data,refresh){data.filter{surah->offlineSurahAudioFile(context,surah.number).let{file->file.exists()&&file.length()>0L}}}
+ Base{
+  Heading("LISTEN ANYWHERE","Offline audio")
+  Text("Downloaded Surah recitations are stored in this app's private music folder and can play without an internet connection.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
+  if(saved.isEmpty())Text("No audio downloaded yet. Open a Surah and tap Save audio.",color=Muted,modifier=Modifier.padding(top=18.dp))
+  LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp),contentPadding=PaddingValues(top=12.dp,bottom=20.dp)){
+   items(saved){surah->
+    Row(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(13.dp)).padding(12.dp),verticalAlignment=Alignment.CenterVertically){
+     Column(Modifier.weight(1f)){Text(surah.english,color=Cream,fontWeight=FontWeight.SemiBold);Text(surah.ayahs.toString()+" Ayahs · Offline",color=Muted,fontSize=11.sp)}
+     IconButton(onClick={play(surah)}){Icon(Icons.Default.PlayArrow,null,tint=Gold)}
+     IconButton(onClick={remove(surah);refresh++}){Icon(Icons.Default.DeleteOutline,null,tint=Muted)}
+    }
+   }
+  }
+ }
+}
+@Composable private fun ReaderScreen(s:Surah?,data:List<Ayah>,loading:Boolean,error:String,translationLabel:String,translationRtl:Boolean,isFav:Boolean,toggleFav:(Surah)->Unit,audio:(Surah)->Unit,retry:()->Unit,openTafseer:(Surah)->Unit,download:(Surah)->Unit){
+ Base{if(s==null)return@Base;Heading("SURAH "+s.number+" · "+s.type,s.english);Text(s.meaning+" · "+s.ayahs+" Ayahs",color=Muted,fontSize=12.sp);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){TextButton(onClick={toggleFav(s)}){Icon(if(isFav)Icons.Default.Favorite else Icons.Default.FavoriteBorder,null,tint=Gold);Text(if(isFav)" Saved" else " Save",color=Gold)};TextButton(onClick={openTafseer(s)}){Text("Tafseer",color=Gold)};TextButton(onClick={download(s)}){Icon(Icons.Default.Download,null,tint=Gold);Text(" Save audio",color=Gold)};Spacer(Modifier.weight(1f));Button({audio(s)},Modifier.padding(vertical=10.dp),colors=ButtonDefaults.buttonColors(containerColor=Gold,contentColor=Emerald)){Icon(Icons.Default.PlayArrow,null);Text("  Listen")}}
  if(loading)LinearProgressIndicator(Modifier.fillMaxWidth(),color=Gold);if(error.isNotEmpty())Column(Modifier.fillMaxWidth().padding(10.dp)){Text(error,color=Gold);TextButton(onClick=retry){Text("Retry",color=Gold)}}
  LazyColumn(contentPadding=PaddingValues(bottom=24.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){items(data){a->Column(Modifier.fillMaxWidth().background(Deep,RoundedCornerShape(14.dp)).padding(15.dp)){Text("AYAH "+a.number,color=Gold,fontSize=10.sp);Text(a.arabic,color=Cream,fontSize=27.sp,lineHeight=48.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth().padding(vertical=10.dp),fontFamily=FontFamily.Serif);Divider(color=Border);Text(translationLabel,color=Gold,fontSize=10.sp,modifier=Modifier.padding(top=9.dp));Text(a.translation,color=Cream,fontSize=if(translationRtl)16.sp else 14.sp,lineHeight=if(translationRtl)29.sp else 23.sp,textAlign=if(translationRtl)TextAlign.End else TextAlign.Start,modifier=Modifier.fillMaxWidth())}}}
  }
@@ -449,7 +510,7 @@ private val curatedPlaylists = emptyList<CuratedPlaylist>()
  Base{
   Heading("YOUR SPACE","More features")
   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(9.dp),contentPadding=PaddingValues(bottom=20.dp)){
-   items(listOf("Learning","Quiz","Qibla","Prayer Times","Favourites","History","Settings")){item->Tile(item,"Open "+item,"✧"){go(item)}}
+   items(listOf("Learning","Quiz","Qibla","Prayer Times","Offline Audio","Favourites","History","Settings")){item->Tile(item,"Open "+item,"✧"){go(item)}}
   }
  }
 }

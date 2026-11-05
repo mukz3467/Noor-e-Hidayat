@@ -11,6 +11,8 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Location-based prayer timetable using the AlAdhan service, with selectable calculation methods and Hanafi/Shafi'i Asr settings.
 - Qibla compass using the device location and rotation-vector sensor.
 - Surah audio playback through AndroidX Media3 / ExoPlayer using AlQuran Cloud audio, with buffering/error feedback, retry controls and a MediaSession foreground service for background playback and system media controls.
+- Optional offline Surah audio downloads through Android DownloadManager, with download notifications, private app storage and an offline playback library.
+- Optional prayer-time notifications using inexact Android alarms, a notification channel and daily timetable refresh from the saved location; no exact-alarm permission is required.
 - Recitation catalogue.
 - Structured beginner Quran-learning path with Arabic letters, harakat, makharij, Noon/Meem rules, Madd, Qalqalah, Ghunnah, Waqf and revision.
 - Twenty-question Islamic knowledge quiz with scoring and replay.
@@ -30,7 +32,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 ## Important limitations before public release
 
 - Internet is required for first-time Quran catalogue/reader downloads, streamed audio, live pages, video search and Tafseer editions. The catalogue and eight most recently read Surah/translation pairs are cached for offline text reading.
-- Audio is streamed; offline audio downloads are not implemented. MediaSession foreground playback supports continuing audio when the app is backgrounded.
+- Offline audio files are downloaded only when requested by the user and stored in app-private external music storage. Files are removed if the app is uninstalled or its app data is cleared. MediaSession foreground playback supports continuing audio when the app is backgrounded.
 - Video discovery opens YouTube-hosted search pages inside the app; the app does not scrape, download or mirror videos. YouTube controls, branding, provider ads, sign-in prompts and regional/age/content restrictions remain under YouTube's control.
 - Video categories currently open provider-side YouTube search results; there is no curated or independently verified playlist catalogue in the app yet.
 - Live broadcaster pages are external services and must be tested on real devices and networks.
@@ -38,7 +40,7 @@ Noor-e-Hidayat is an Android Islamic companion app built with Kotlin, Jetpack Co
 - Watch history stores titles only; it is not a full playback-position history.
 - The learning section is introductory guidance and does not replace a qualified Quran/Tajweed teacher.
 - Prayer times depend on location permission, a location fix and the external AlAdhan service. Calculation method and Asr school are configurable; local mosque timetables may use different settings.
-- Scheduled prayer notifications/reminders are not implemented yet.
+- Prayer notifications are optional and require notification permission on Android 13+. Android may delay inexact alarms due to battery optimisation; they are not guaranteed to fire at an exact second.
 - Tafseer editions and their availability are supplied by AlQuran Cloud; verify religious interpretation with qualified scholars.
 - The repository workflow verifies compilation and runs UI smoke tests on an emulator. It does not replace physical-device, playback, accessibility, privacy or policy QA.
 - The app integrates Google's UMP SDK, but the publisher must still configure applicable privacy messages in AdMob. The app uses Google's official AdMob test App ID and test banner unit ID. Replace these with the app owner's production IDs only after the AdMob account/app setup and policy review are complete. Never ship test IDs as a revenue configuration.
