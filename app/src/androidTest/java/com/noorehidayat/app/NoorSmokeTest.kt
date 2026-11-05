@@ -49,6 +49,12 @@ class NoorSmokeTest {
     }
 
     @Test
+    fun qiblaTurnUsesShortestDirection() {
+        assertTrue(kotlin.math.abs(shortestCompassTurn(350f) + 10f) < 0.01f)
+        assertTrue(kotlin.math.abs(shortestCompassTurn(10f) - 10f) < 0.01f)
+    }
+
+    @Test
     fun qiblaHeadingAppliesLocalMagneticDeclination() {
         val location = Location("test").apply {
             latitude = 31.418
